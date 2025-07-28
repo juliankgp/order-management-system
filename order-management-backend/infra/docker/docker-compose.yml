@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: order-management-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=OrderManagement2024!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - order-management-network
+    restart: unless-stopped
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: order-management-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=OrderManagement2024!
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - order-management-network
+    restart: unless-stopped
+
+  # Order Service
+  order-service:
+    build:
+      context: ../../
+      dockerfile: services/OrderService/Dockerfile
+    container_name: order-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Orders;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - Jwt__Key=docker-super-secret-key-that-is-at-least-32-characters-long
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+    ports:
+      - "5001:5001"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - order-management-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/order-service:/app/logs
+
+  # Product Service (placeholder)
+  product-service:
+    build:
+      context: ../../
+      dockerfile: services/ProductService/Dockerfile
+    container_name: product-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Products;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+    ports:
+      - "5002:5002"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - order-management-network
+    restart: unless-stopped
+
+  # Customer Service (placeholder)
+  customer-service:
+    build:
+      context: ../../
+      dockerfile: services/CustomerService/Dockerfile
+    container_name: customer-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Customers;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+    ports:
+      - "5003:5003"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - order-management-network
+    restart: unless-stopped
+
+  # Logging Service (placeholder)
+  logging-service:
+    build:
+      context: ../../
+      dockerfile: services/LoggingService/Dockerfile
+    container_name: logging-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Logs;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+    ports:
+      - "5004:5004"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - order-management-network
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+  rabbitmq_data:
+
+networks:
+  order-management-network:
+    driver: bridge
