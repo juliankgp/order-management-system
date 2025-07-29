@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="FluentValidation" Version="11.8.0" />
+    <PackageReference Include="MediatR" Version="12.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\CustomerService.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\OrderManagement.Shared.Common\OrderManagement.Shared.Common.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\OrderManagement.Shared.Events\OrderManagement.Shared.Events.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\OrderManagement.Shared.Security\OrderManagement.Shared.Security.csproj" />
+  </ItemGroup>
+
+</Project>

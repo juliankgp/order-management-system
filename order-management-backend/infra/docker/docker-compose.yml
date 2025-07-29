@@ -59,7 +59,7 @@ services:
     volumes:
       - ./logs/order-service:/app/logs
 
-  # Product Service (placeholder)
+  # Product Service
   product-service:
     build:
       context: ../../
@@ -68,9 +68,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Products;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
-      - RabbitMQ__HostName=rabbitmq
-      - RabbitMQ__UserName=admin
-      - RabbitMQ__Password=OrderManagement2024!
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USERNAME=admin
+      - RABBITMQ_PASSWORD=OrderManagement2024!
+      - RABBITMQ_EXCHANGE=order_management_exchange
+      - Jwt__Key=docker-super-secret-key-that-is-at-least-32-characters-long
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementUsers
     ports:
       - "5002:5002"
     depends_on:
@@ -79,6 +83,8 @@ services:
     networks:
       - order-management-network
     restart: unless-stopped
+    volumes:
+      - ./logs/product-service:/app/logs
 
   # Customer Service (placeholder)
   customer-service:
