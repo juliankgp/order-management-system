@@ -14,14 +14,27 @@ public interface IOrderRepository
     Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Obtiene una orden por su ID incluyendo los items
+    /// </summary>
+    Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Obtiene una orden por su número
     /// </summary>
     Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Obtiene todas las órdenes con paginación
+    /// Obtiene todas las órdenes con paginación y filtros
     /// </summary>
-    Task<PagedResult<Order>> GetPagedAsync(PaginationParameters parameters, CancellationToken cancellationToken = default);
+    Task<PagedResult<Order>> GetPagedAsync(
+        int page, 
+        int pageSize, 
+        Guid? customerId = null,
+        string? status = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? orderNumber = null,
+        CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Obtiene órdenes por cliente ID
@@ -29,27 +42,22 @@ public interface IOrderRepository
     Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, PaginationParameters parameters, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Obtiene órdenes por estado
+    /// Cuenta las órdenes creadas hoy
     /// </summary>
-    Task<PagedResult<Order>> GetByStatusAsync(OrderStatus status, PaginationParameters parameters, CancellationToken cancellationToken = default);
+    Task<int> CountTodayOrdersAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Agrega una nueva orden
     /// </summary>
-    Task<Order> AddAsync(Order order, CancellationToken cancellationToken = default);
+    Task AddAsync(Order order, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Actualiza una orden existente
+    /// Actualiza una orden
     /// </summary>
-    Task<Order> UpdateAsync(Order order, CancellationToken cancellationToken = default);
+    void Update(Order order);
     
     /// <summary>
     /// Elimina una orden (soft delete)
     /// </summary>
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Verifica si existe una orden con el número especificado
-    /// </summary>
-    Task<bool> ExistsAsync(string orderNumber, CancellationToken cancellationToken = default);
+    void Delete(Order order);
 }

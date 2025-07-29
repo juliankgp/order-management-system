@@ -28,7 +28,7 @@
     <ProjectReference Include="..\src\Application\OrderService.Application.csproj" />
     <ProjectReference Include="..\src\Domain\OrderService.Domain.csproj" />
     <ProjectReference Include="..\src\Infrastructure\OrderService.Infrastructure.csproj" />
-    <ProjectReference Include="..\src\Web\OrderService.Web.csproj" />
+    <ProjectReference Include="..\src\Api\OrderService.Api.csproj" />
   </ItemGroup>
 
 </Project>

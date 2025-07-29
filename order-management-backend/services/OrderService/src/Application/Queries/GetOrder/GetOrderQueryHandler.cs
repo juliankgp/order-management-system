@@ -1,63 +1,81 @@
+using AutoMapper;
 using MediatR;
-using OrderManagement.Shared.Common.Exceptions;
-using OrderManagement.Shared.Common.Models;
+using Microsoft.Extensions.Logging;
+using OrderService.Application.DTOs;
+using OrderService.Application.Interfaces;
 using OrderService.Domain.Repositories;
 
 namespace OrderService.Application.Queries.GetOrder;
 
 /// <summary>
-/// Handler para obtener una orden por ID
+/// Handler para la query de obtener orden por ID
 /// </summary>
-public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, ApiResponse<OrderDto>>
+public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, OrderDto?>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
+    private readonly IMapper _mapper;
+    private readonly ILogger<GetOrderQueryHandler> _logger;
 
-    public GetOrderQueryHandler(IUnitOfWork unitOfWork)
+    public GetOrderQueryHandler(
+        IUnitOfWork unitOfWork,
+        IProductService productService,
+        IMapper mapper,
+        ILogger<GetOrderQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _productService = productService;
+        _mapper = mapper;
+        _logger = logger;
     }
 
-    public async Task<ApiResponse<OrderDto>> Handle(GetOrderQuery request, CancellationToken cancellationToken)
+    public async Task<OrderDto?> Handle(GetOrderQuery request, CancellationToken cancellationToken)
     {
-        var order = await _unitOfWork.Orders.GetByIdAsync(request.OrderId, cancellationToken);
-        
-        if (order == null)
-        {
-            throw new EntityNotFoundException(nameof(Domain.Entities.Order), request.OrderId);
-        }
+        _logger.LogInformation("Processing get order query for order {OrderId}", request.OrderId);
 
-        var orderDto = new OrderDto
+        try
         {
-            Id = order.Id,
-            OrderNumber = order.OrderNumber,
-            CustomerId = order.CustomerId,
-            Status = order.Status.ToString(),
-            OrderDate = order.OrderDate,
-            TotalAmount = order.TotalAmount,
-            SubTotal = order.SubTotal,
-            TaxAmount = order.TaxAmount,
-            ShippingCost = order.ShippingCost,
-            ShippingAddress = order.ShippingAddress,
-            ShippingCity = order.ShippingCity,
-            ShippingZipCode = order.ShippingZipCode,
-            ShippingCountry = order.ShippingCountry,
-            Notes = order.Notes,
-            CreatedAt = order.CreatedAt,
-            UpdatedAt = order.UpdatedAt,
-            Items = order.Items.Select(item => new OrderItemDto
+            // 1. Obtener la orden con sus items
+            var order = await _unitOfWork.Orders.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+            if (order == null)
             {
-                Id = item.Id,
-                ProductId = item.ProductId,
-                ProductName = item.ProductName,
-                ProductSku = item.ProductSku,
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice,
-                Discount = item.Discount,
-                Notes = item.Notes
-            }).ToList()
-        };
+                _logger.LogWarning("Order {OrderId} not found", request.OrderId);
+                return null;
+            }
 
-        return ApiResponse<OrderDto>.SuccessResponse(orderDto);
+            // 2. Mapear a DTO
+            var orderDto = _mapper.Map<OrderDto>(order);
+
+            // 3. Enriquecer con información de productos
+            if (order.Items.Any())
+            {
+                var productIds = order.Items.Select(i => i.ProductId).ToList();
+                var products = await _productService.GetProductsAsync(productIds, cancellationToken);
+                var productDict = products.ToDictionary(p => p.Id);
+
+                // Crear una nueva lista con los items enriquecidos
+                var enrichedItems = new List<OrderItemDto>();
+                foreach (var itemDto in orderDto.Items)
+                {
+                    var enrichedItem = itemDto;
+                    if (productDict.TryGetValue(itemDto.ProductId, out var product))
+                    {
+                        enrichedItem = itemDto with { ProductName = product.Name };
+                    }
+                    enrichedItems.Add(enrichedItem);
+                }
+
+                // Actualizar el DTO con los items enriquecidos
+                orderDto = orderDto with { Items = enrichedItems };
+            }
+
+            _logger.LogInformation("Order {OrderId} retrieved successfully", request.OrderId);
+            return orderDto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving order {OrderId}", request.OrderId);
+            throw;
+        }
     }
 }

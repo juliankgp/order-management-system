@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Application", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Infrastructure", "services\OrderService\src\Infrastructure\OrderService.Infrastructure.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Web", "services\OrderService\src\Web\OrderService.Web.csproj", "{77777777-7777-7777-7777-777777777777}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Api", "services\OrderService\src\Api\OrderService.Api.csproj", "{77777777-7777-7777-7777-777777777777}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Tests", "services\OrderService\tests\OrderService.Tests.csproj", "{88888888-8888-8888-8888-888888888888}"
 EndProject

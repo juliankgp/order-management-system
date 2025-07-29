@@ -1,5 +1,4 @@
 using FluentValidation;
-using OrderService.Application.Commands.CreateOrder;
 
 namespace OrderService.Application.Commands.CreateOrder;
 
@@ -10,38 +9,24 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 {
     public CreateOrderCommandValidator()
     {
-        RuleFor(x => x.CustomerId)
+        RuleFor(x => x.OrderData)
+            .NotNull()
+            .WithMessage("Order data is required");
+
+        RuleFor(x => x.OrderData.CustomerId)
             .NotEmpty()
             .WithMessage("Customer ID is required");
 
-        RuleFor(x => x.Items)
+        RuleFor(x => x.OrderData.Items)
             .NotEmpty()
-            .WithMessage("Order must have at least one item");
+            .WithMessage("Order must have at least one item")
+            .Must(items => items.Count <= 50)
+            .WithMessage("Order cannot have more than 50 items");
 
-        RuleForEach(x => x.Items)
+        RuleForEach(x => x.OrderData.Items)
             .SetValidator(new CreateOrderItemValidator());
 
-        RuleFor(x => x.ShippingAddress)
-            .NotEmpty()
-            .MaximumLength(200)
-            .WithMessage("Shipping address is required and must not exceed 200 characters");
-
-        RuleFor(x => x.ShippingCity)
-            .NotEmpty()
-            .MaximumLength(100)
-            .WithMessage("Shipping city is required and must not exceed 100 characters");
-
-        RuleFor(x => x.ShippingZipCode)
-            .NotEmpty()
-            .MaximumLength(20)
-            .WithMessage("Shipping zip code is required and must not exceed 20 characters");
-
-        RuleFor(x => x.ShippingCountry)
-            .NotEmpty()
-            .MaximumLength(50)
-            .WithMessage("Shipping country is required and must not exceed 50 characters");
-
-        RuleFor(x => x.Notes)
+        RuleFor(x => x.OrderData.Notes)
             .MaximumLength(500)
             .WithMessage("Notes must not exceed 500 characters");
     }
@@ -50,7 +35,7 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 /// <summary>
 /// Validador para items de orden
 /// </summary>
-public class CreateOrderItemValidator : AbstractValidator<CreateOrderItemRequest>
+public class CreateOrderItemValidator : AbstractValidator<OrderService.Application.DTOs.CreateOrderItemDto>
 {
     public CreateOrderItemValidator()
     {
@@ -60,6 +45,8 @@ public class CreateOrderItemValidator : AbstractValidator<CreateOrderItemRequest
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0)
-            .WithMessage("Quantity must be greater than 0");
+            .WithMessage("Quantity must be greater than 0")
+            .LessThanOrEqualTo(1000)
+            .WithMessage("Quantity cannot exceed 1000");
     }
 }

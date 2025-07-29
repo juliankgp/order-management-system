@@ -21,8 +21,15 @@ public class OrderRepository : IOrderRepository
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Orders
+            .Where(o => !o.IsDeleted)
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+    }
+
+    public async Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
             .Include(o => o.Items)
-            .Include(o => o.StatusHistory)
+            .Where(o => !o.IsDeleted)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
@@ -30,55 +37,69 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .Include(o => o.Items)
-            .Include(o => o.StatusHistory)
+            .Where(o => !o.IsDeleted)
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
     }
 
-    public async Task<PagedResult<Order>> GetPagedAsync(PaginationParameters parameters, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Order>> GetPagedAsync(
+        int page, 
+        int pageSize, 
+        Guid? customerId = null, 
+        string? status = null, 
+        DateTime? fromDate = null, 
+        DateTime? toDate = null, 
+        string? orderNumber = null,
+        CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
             .Include(o => o.Items)
-            .AsQueryable();
+            .Where(o => !o.IsDeleted);
 
-        // Aplicar filtro de búsqueda
-        if (!string.IsNullOrEmpty(parameters.SearchTerm))
+        // Aplicar filtros
+        if (customerId.HasValue)
         {
-            query = query.Where(o => o.OrderNumber.Contains(parameters.SearchTerm) ||
-                                   o.ShippingCity.Contains(parameters.SearchTerm) ||
-                                   o.ShippingCountry.Contains(parameters.SearchTerm));
+            query = query.Where(o => o.CustomerId == customerId.Value);
         }
 
-        // Aplicar ordenamiento
-        query = parameters.SortBy?.ToLower() switch
+        if (!string.IsNullOrEmpty(status))
         {
-            "ordernumber" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.OrderNumber)
-                : query.OrderBy(o => o.OrderNumber),
-            "orderdate" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.OrderDate)
-                : query.OrderBy(o => o.OrderDate),
-            "totalamount" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.TotalAmount)
-                : query.OrderBy(o => o.TotalAmount),
-            "status" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.Status)
-                : query.OrderBy(o => o.Status),
-            _ => query.OrderByDescending(o => o.CreatedAt)
-        };
+            if (Enum.TryParse<OrderStatus>(status, true, out var orderStatus))
+            {
+                query = query.Where(o => o.Status == orderStatus);
+            }
+        }
 
+        if (fromDate.HasValue)
+        {
+            query = query.Where(o => o.OrderDate >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(o => o.OrderDate <= toDate.Value);
+        }
+
+        if (!string.IsNullOrEmpty(orderNumber))
+        {
+            query = query.Where(o => o.OrderNumber.Contains(orderNumber));
+        }
+
+        // Contar total de registros
         var totalCount = await query.CountAsync(cancellationToken);
-        
-        var items = await query
-            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-            .Take(parameters.PageSize)
+
+        // Aplicar paginación
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<Order>
         {
-            Items = items,
+            Items = orders,
             TotalCount = totalCount,
-            CurrentPage = parameters.PageNumber,
-            PageSize = parameters.PageSize
+            CurrentPage = page,
+            PageSize = pageSize
         };
     }
 
@@ -86,109 +107,49 @@ public class OrderRepository : IOrderRepository
     {
         var query = _context.Orders
             .Include(o => o.Items)
-            .Where(o => o.CustomerId == customerId);
-
-        // Aplicar filtro de búsqueda
-        if (!string.IsNullOrEmpty(parameters.SearchTerm))
-        {
-            query = query.Where(o => o.OrderNumber.Contains(parameters.SearchTerm));
-        }
-
-        // Aplicar ordenamiento (por defecto por fecha descendente)
-        query = parameters.SortBy?.ToLower() switch
-        {
-            "ordernumber" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.OrderNumber)
-                : query.OrderBy(o => o.OrderNumber),
-            "totalamount" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.TotalAmount)
-                : query.OrderBy(o => o.TotalAmount),
-            _ => query.OrderByDescending(o => o.OrderDate)
-        };
+            .Where(o => o.CustomerId == customerId && !o.IsDeleted);
 
         var totalCount = await query.CountAsync(cancellationToken);
-        
-        var items = await query
+
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
             .Skip((parameters.PageNumber - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<Order>
         {
-            Items = items,
+            Items = orders,
             TotalCount = totalCount,
             CurrentPage = parameters.PageNumber,
             PageSize = parameters.PageSize
         };
     }
 
-    public async Task<PagedResult<Order>> GetByStatusAsync(OrderStatus status, PaginationParameters parameters, CancellationToken cancellationToken = default)
+    public async Task<int> CountTodayOrdersAsync(CancellationToken cancellationToken = default)
     {
-        var query = _context.Orders
-            .Include(o => o.Items)
-            .Where(o => o.Status == status);
+        var today = DateTime.UtcNow.Date;
+        var tomorrow = today.AddDays(1);
 
-        // Aplicar filtro de búsqueda
-        if (!string.IsNullOrEmpty(parameters.SearchTerm))
-        {
-            query = query.Where(o => o.OrderNumber.Contains(parameters.SearchTerm) ||
-                                   o.ShippingCity.Contains(parameters.SearchTerm));
-        }
-
-        // Aplicar ordenamiento
-        query = parameters.SortBy?.ToLower() switch
-        {
-            "ordernumber" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.OrderNumber)
-                : query.OrderBy(o => o.OrderNumber),
-            "orderdate" => parameters.SortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(o => o.OrderDate)
-                : query.OrderBy(o => o.OrderDate),
-            _ => query.OrderByDescending(o => o.CreatedAt)
-        };
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        
-        var items = await query
-            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-            .Take(parameters.PageSize)
-            .ToListAsync(cancellationToken);
-
-        return new PagedResult<Order>
-        {
-            Items = items,
-            TotalCount = totalCount,
-            CurrentPage = parameters.PageNumber,
-            PageSize = parameters.PageSize
-        };
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= today && o.CreatedAt < tomorrow)
+            .CountAsync(cancellationToken);
     }
 
-    public async Task<Order> AddAsync(Order order, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
     {
-        _context.Orders.Add(order);
-        return order;
+        await _context.Orders.AddAsync(order, cancellationToken);
     }
 
-    public async Task<Order> UpdateAsync(Order order, CancellationToken cancellationToken = default)
+    public void Update(Order order)
     {
         _context.Orders.Update(order);
-        return order;
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public void Delete(Order order)
     {
-        var order = await _context.Orders.FindAsync(new object[] { id }, cancellationToken);
-        if (order != null)
-        {
-            order.IsDeleted = true;
-            order.DeletedAt = DateTime.UtcNow;
-            _context.Orders.Update(order);
-        }
-    }
-
-    public async Task<bool> ExistsAsync(string orderNumber, CancellationToken cancellationToken = default)
-    {
-        return await _context.Orders
-            .AnyAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+        order.IsDeleted = true;
+        order.DeletedAt = DateTime.UtcNow;
+        _context.Orders.Update(order);
     }
 }

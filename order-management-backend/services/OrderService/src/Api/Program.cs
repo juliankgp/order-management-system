@@ -1,13 +1,19 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OrderManagement.Shared.Security.Models;
 using OrderManagement.Shared.Security.Services;
+using OrderService.Application.Mappings;
+using OrderService.Application.Interfaces;
 using OrderService.Domain.Repositories;
 using OrderService.Infrastructure.Data;
+using OrderService.Infrastructure.ExternalServices;
 using OrderService.Infrastructure.Repositories;
 using Serilog;
 using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
+    .Enrich.WithProperty("ServiceName", "OrderService")
     .WriteTo.Console()
     .WriteTo.File("logs/orderservice-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
@@ -68,9 +75,30 @@ builder.Services.AddMediatR(cfg =>
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(OrderService.Application.Commands.CreateOrder.CreateOrderCommand).Assembly);
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(OrderMappingProfile));
+
 // Repositorios y Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// External Services
+builder.Services.AddHttpClient<OrderService.Application.Interfaces.IProductService, ProductService>(client =>
+{
+    var baseUrl = builder.Configuration["ExternalServices:ProductService:BaseUrl"] ?? "http://localhost:5002";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<OrderService.Application.Interfaces.ICustomerService, CustomerService>(client =>
+{
+    var baseUrl = builder.Configuration["ExternalServices:CustomerService:BaseUrl"] ?? "http://localhost:5003";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Event Bus Service
+builder.Services.AddSingleton<OrderService.Application.Interfaces.IEventBusService, RabbitMQEventBusService>();
 
 // JWT Configuration
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
@@ -78,16 +106,30 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
-if (jwtSettings != null)
+if (jwtSettings != null && !string.IsNullOrEmpty(jwtSettings.Key))
 {
-    builder.Services.AddAuthentication("Bearer")
-        .AddJwtBearer("Bearer", options =>
+    var key = Encoding.ASCII.GetBytes(jwtSettings.Key);
+    
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            options.Authority = jwtSettings.Issuer;
-            options.Audience = jwtSettings.Audience;
             options.RequireHttpsMetadata = false; // Solo para desarrollo
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwtSettings.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
         });
 }
+
+builder.Services.AddAuthorization();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -102,7 +144,7 @@ builder.Services.AddCors(options =>
 
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddDbContext<OrderDbContext>();
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
 
 var app = builder.Build();
 
