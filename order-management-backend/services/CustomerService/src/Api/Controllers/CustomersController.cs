@@ -7,6 +7,7 @@ using CustomerService.Application.Queries.GetCustomers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using OrderManagement.Shared.Common.Models;
 using System.Security.Claims;
 
@@ -37,6 +38,33 @@ public class CustomersController : ControllerBase
     public ActionResult<string> Test()
     {
         return Ok("CustomerService is running successfully!");
+    }
+
+    /// <summary>
+    /// JWT configuration debug endpoint
+    /// </summary>
+    [HttpGet("jwt-debug")]
+    [AllowAnonymous]
+    [ProducesResponseType(200)]
+    public ActionResult<object> JwtDebug([FromServices] IConfiguration configuration)
+    {
+        var key = configuration["Jwt:Key"];
+        var issuer = configuration["Jwt:Issuer"];
+        var audience = configuration["Jwt:Audience"];
+        
+        // Generar hash de la clave para verificar consistencia
+        var keyHash = !string.IsNullOrEmpty(key) ? 
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..16] : 
+            "NO_KEY";
+        
+        return Ok(new { 
+            KeyLength = key?.Length ?? 0,
+            KeyExists = !string.IsNullOrEmpty(key),
+            KeyHash = keyHash,
+            Issuer = issuer,
+            Audience = audience,
+            HasFallback = true
+        });
     }
 
     /// <summary>
