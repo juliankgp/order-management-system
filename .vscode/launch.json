@@ -35,6 +35,24 @@
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    {
+      "name": "Debug LoggingService API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/order-management-backend/services/LoggingService/src/Api/bin/Debug/net8.0/LoggingService.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/order-management-backend/services/LoggingService/src/Api",
+      "stopAtEntry": false,
+      "requireExactSource": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ],
   "compounds": [

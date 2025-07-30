@@ -18,25 +18,25 @@ catch {
 $services = @(
     @{
         Name = "OrderService"
-        Path = "services/OrderService/src/Web"
+        Path = "services/OrderService/src/Api"
         Port = "5001"
         Url = "https://localhost:5001"
     },
     @{
         Name = "ProductService"
-        Path = "services/ProductService/src/Web"
+        Path = "services/ProductService/src/Api"
         Port = "5002"
         Url = "https://localhost:5002"
     },
     @{
         Name = "CustomerService"
-        Path = "services/CustomerService/src/Web"
+        Path = "services/CustomerService/src/Api"
         Port = "5003"
         Url = "https://localhost:5003"
     },
     @{
         Name = "LoggingService"
-        Path = "services/LoggingService/src/Web"
+        Path = "services/LoggingService/src/Api"
         Port = "5004"
         Url = "https://localhost:5004"
     }

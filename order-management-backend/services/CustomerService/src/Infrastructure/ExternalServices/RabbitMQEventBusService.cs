@@ -20,17 +20,17 @@ public class RabbitMQEventBusService : IEventBusService, IDisposable
     public RabbitMQEventBusService(IConfiguration configuration, ILogger<RabbitMQEventBusService> logger)
     {
         _logger = logger;
-        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "order_management_exchange";
+        _exchangeName = "customers"; // Cambiar a exchange específico de customers
 
         try
         {
             var factory = new ConnectionFactory()
             {
-                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
-                Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT") ?? "5672"),
-                UserName = Environment.GetEnvironmentVariable("RABBITMQ_USERNAME") ?? "guest",
-                Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest",
-                VirtualHost = Environment.GetEnvironmentVariable("RABBITMQ_VHOST") ?? "/",
+                HostName = configuration["RabbitMQ:Host"] ?? "localhost",
+                Port = int.Parse(configuration["RabbitMQ:Port"] ?? "5672"),
+                UserName = configuration["RabbitMQ:Username"] ?? "guest",
+                Password = configuration["RabbitMQ:Password"] ?? "guest",
+                VirtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/",
                 AutomaticRecoveryEnabled = true,
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
             };
@@ -38,7 +38,7 @@ public class RabbitMQEventBusService : IEventBusService, IDisposable
             _connection = factory.CreateConnection("CustomerService-Publisher");
             _channel = _connection.CreateModel();
 
-            // Declarar el exchange
+            // Declarar el exchange de customers (mismo que LoggingService)
             _channel.ExchangeDeclare(
                 exchange: _exchangeName,
                 type: ExchangeType.Topic,

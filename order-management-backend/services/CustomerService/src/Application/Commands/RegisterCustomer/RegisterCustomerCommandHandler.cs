@@ -99,7 +99,7 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
 
         try
         {
-            await _eventBus.PublishAsync(customerRegisteredEvent, "customers.registered", cancellationToken);
+            await _eventBus.PublishAsync(customerRegisteredEvent, "customer.registered", cancellationToken);
             _logger.LogInformation("CustomerRegisteredEvent published for customer {CustomerId}", customer.Id);
         }
         catch (Exception ex)
