@@ -146,13 +146,11 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
     private decimal CalculateTax(decimal subTotal)
     {
-        // Implementar lógica de cálculo de impuestos
         return subTotal * 0.10m; // 10% de impuestos
     }
 
     private decimal CalculateShipping(decimal subTotal)
     {
-        // Implementar lógica de cálculo de envío
         if (subTotal > 100) return 0; // Envío gratis para órdenes mayores a $100
         return 10; // $10 de costo de envío
     }

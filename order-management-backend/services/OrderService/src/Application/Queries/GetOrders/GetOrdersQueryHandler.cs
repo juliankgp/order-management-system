@@ -52,6 +52,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             var orderDtos = _mapper.Map<List<OrderDto>>(pagedOrders.Items);
 
             // 3. Enriquecer con información de productos para cada orden
+            var enrichedOrderDtos = new List<OrderDto>();
             foreach (var orderDto in orderDtos)
             {
                 if (orderDto.Items.Any())
@@ -72,15 +73,19 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
                         enrichedItems.Add(enrichedItem);
                     }
 
-                    // Actualizar el item en la lista principal
-                    var index = orderDtos.IndexOf(orderDto);
-                    orderDtos[index] = orderDto with { Items = enrichedItems };
+                    // Crear nuevo OrderDto con items enriquecidos
+                    enrichedOrderDtos.Add(orderDto with { Items = enrichedItems });
+                }
+                else
+                {
+                    // Mantener el OrderDto original si no tiene items
+                    enrichedOrderDtos.Add(orderDto);
                 }
             }
 
             var result = new PagedResult<OrderDto>
             {
-                Items = orderDtos,
+                Items = enrichedOrderDtos,
                 TotalCount = pagedOrders.TotalCount,
                 CurrentPage = pagedOrders.CurrentPage,
                 PageSize = pagedOrders.PageSize

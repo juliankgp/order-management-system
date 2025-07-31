@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.Application.Commands.DeleteOrder;
 using OrderService.Application.Interfaces;
@@ -11,22 +12,25 @@ namespace OrderService.Tests.Application;
 
 public class DeleteOrderCommandHandlerTests
 {
-    private readonly Mock<IOrderRepository> _orderRepositoryMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IEventBusService> _eventBusServiceMock;
+    private readonly Mock<ILogger<DeleteOrderCommandHandler>> _loggerMock;
     private readonly DeleteOrderCommandHandler _handler;
 
     public DeleteOrderCommandHandlerTests()
     {
-        _orderRepositoryMock = new Mock<IOrderRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _eventBusServiceMock = new Mock<IEventBusService>();
+        _loggerMock = new Mock<ILogger<DeleteOrderCommandHandler>>();
 
         _handler = new DeleteOrderCommandHandler(
-            _orderRepositoryMock.Object,
-            _eventBusServiceMock.Object);
+            _unitOfWorkMock.Object,
+            _eventBusServiceMock.Object,
+            _loggerMock.Object);
     }
 
     [Fact]
-    public async Task Handle_ValidOrderId_ShouldDeleteOrderSuccessfully()
+    public async Task Handle_ValidCommand_ShouldDeleteOrderSuccessfully()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -36,82 +40,69 @@ public class DeleteOrderCommandHandlerTests
         {
             Id = orderId,
             CustomerId = Guid.NewGuid(),
+            OrderNumber = "ORD-001",
             Status = OrderStatus.Pending,
-            Notes = "Test order",
-            OrderItems = new List<OrderItem>
+            TotalAmount = 50.00m,
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>
             {
-                new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 1, UnitPrice = 10.00m }
+                new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = Guid.NewGuid(),
+                    ProductName = "Test Product",
+                    ProductSku = "TEST-001",
+                    Quantity = 2,
+                    UnitPrice = 25.00m,
+                    TotalPrice = 50.00m
+                }
             }
         };
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingOrder);
 
-        _orderRepositoryMock.Setup(x => x.DeleteAsync(orderId))
-            .Returns(Task.CompletedTask);
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
         // Act
-        await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.DeleteAsync(orderId), Times.Once);
-        _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Once);
+        result.Should().BeTrue();
+
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.Update(existingOrder), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // El handler real no publica eventos para eliminación
+        _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_OrderNotFound_ShouldThrowNotFoundException()
+    public async Task Handle_OrderNotFound_ShouldReturnFalse()
     {
         // Arrange
         var orderId = Guid.NewGuid();
         var command = new DeleteOrderCommand(orderId);
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"Order with ID {orderId} not found");
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.DeleteAsync(It.IsAny<Guid>()), Times.Never);
-        _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Never);
-    }
+        // Assert
+        result.Should().BeFalse();
 
-    [Theory]
-    [InlineData(OrderStatus.Processing)]
-    [InlineData(OrderStatus.Shipped)]
-    [InlineData(OrderStatus.Delivered)]
-    [InlineData(OrderStatus.Cancelled)]
-    public async Task Handle_OrderNotPending_ShouldThrowBusinessException(OrderStatus status)
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var command = new DeleteOrderCommand(orderId);
-
-        var existingOrder = new Order
-        {
-            Id = orderId,
-            CustomerId = Guid.NewGuid(),
-            Status = status
-        };
-
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
-            .ReturnsAsync(existingOrder);
-
-        // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<BusinessException>()
-            .WithMessage("Cannot delete order that is not in pending status");
-
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.DeleteAsync(It.IsAny<Guid>()), Times.Never);
-        _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Never);
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_RepositoryThrowsException_ShouldPropagateException()
+    public async Task Handle_OrderNotPending_ShouldThrowBusinessException()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -121,22 +112,76 @@ public class DeleteOrderCommandHandlerTests
         {
             Id = orderId,
             CustomerId = Guid.NewGuid(),
-            Status = OrderStatus.Pending
+            OrderNumber = "ORD-001",
+            Status = OrderStatus.Delivered, // Cannot be deleted
+            TotalAmount = 50.00m,
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>()
         };
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingOrder);
 
-        _orderRepositoryMock.Setup(x => x.DeleteAsync(orderId))
-            .ThrowsAsync(new InvalidOperationException("Database error"));
-
         // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Database error");
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            _handler.Handle(command, CancellationToken.None));
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.DeleteAsync(orderId), Times.Once);
+        exception.Message.Should().Contain("Cannot delete order with status");
+    }
+
+    [Fact]
+    public async Task Handle_ValidPendingOrder_ShouldMarkAsDeleted()
+    {
+        // Arrange
+        var orderId = Guid.NewGuid();
+        var command = new DeleteOrderCommand(orderId);
+
+        var existingOrder = new Order
+        {
+            Id = orderId,
+            CustomerId = Guid.NewGuid(),
+            OrderNumber = "ORD-002",
+            Status = OrderStatus.Pending,
+            TotalAmount = 100.00m,
+            ShippingAddress = "456 Another St",
+            ShippingCity = "Another City",
+            ShippingZipCode = "54321",
+            ShippingCountry = "Another Country",
+            Items = new List<OrderItem>
+            {
+                new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = Guid.NewGuid(),
+                    ProductName = "Another Product",
+                    ProductSku = "TEST-002",
+                    Quantity = 1,
+                    UnitPrice = 100.00m,
+                    TotalPrice = 100.00m
+                }
+            }
+        };
+
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingOrder);
+
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().BeTrue();
+        existingOrder.IsDeleted.Should().BeTrue();
+        existingOrder.DeletedAt.Should().NotBeNull();
+
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // El handler real no publica eventos para eliminación
         _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Never);
     }
 }

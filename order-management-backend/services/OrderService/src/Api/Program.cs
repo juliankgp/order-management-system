@@ -84,15 +84,17 @@ builder.Services.AddAutoMapper(typeof(OrderMappingProfile));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// External Services
-builder.Services.AddHttpClient<OrderService.Application.Interfaces.IProductService, ProductService>(client =>
+// External Services con JWT automático
+builder.Services.AddHttpContextAccessor(); // Necesario para acceder al HttpContext en el DelegatingHandler
+
+builder.Services.AddHttpClientWithJwt<OrderService.Application.Interfaces.IProductService, ProductService>(client =>
 {
     var baseUrl = builder.Configuration["ExternalServices:ProductService:BaseUrl"] ?? "http://localhost:5002";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-builder.Services.AddHttpClient<OrderService.Application.Interfaces.ICustomerService, CustomerService>(client =>
+builder.Services.AddHttpClientWithJwt<OrderService.Application.Interfaces.ICustomerService, CustomerService>(client =>
 {
     var baseUrl = builder.Configuration["ExternalServices:CustomerService:BaseUrl"] ?? "http://localhost:5003";
     client.BaseAddress = new Uri(baseUrl);

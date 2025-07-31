@@ -15,20 +15,24 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 
         RuleFor(x => x.OrderData.CustomerId)
             .NotEmpty()
-            .WithMessage("Customer ID is required");
+            .WithMessage("Customer ID is required")
+            .When(x => x.OrderData != null);
 
         RuleFor(x => x.OrderData.Items)
             .NotEmpty()
             .WithMessage("Order must have at least one item")
             .Must(items => items.Count <= 50)
-            .WithMessage("Order cannot have more than 50 items");
+            .WithMessage("Order cannot have more than 50 items")
+            .When(x => x.OrderData != null);
 
         RuleForEach(x => x.OrderData.Items)
-            .SetValidator(new CreateOrderItemValidator());
+            .SetValidator(new CreateOrderItemValidator())
+            .When(x => x.OrderData != null);
 
         RuleFor(x => x.OrderData.Notes)
             .MaximumLength(500)
-            .WithMessage("Notes must not exceed 500 characters");
+            .WithMessage("Notes must not exceed 500 characters")
+            .When(x => x.OrderData != null);
     }
 }
 

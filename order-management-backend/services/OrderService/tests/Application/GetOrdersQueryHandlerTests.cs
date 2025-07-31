@@ -1,7 +1,9 @@
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.Application.DTOs;
+using OrderService.Application.Interfaces;
 using OrderService.Application.Queries.GetOrders;
 using OrderService.Domain.Entities;
 using OrderService.Domain.Repositories;
@@ -12,18 +14,24 @@ namespace OrderService.Tests.Application;
 
 public class GetOrdersQueryHandlerTests
 {
-    private readonly Mock<IOrderRepository> _orderRepositoryMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IProductService> _productServiceMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ILogger<GetOrdersQueryHandler>> _loggerMock;
     private readonly GetOrdersQueryHandler _handler;
 
     public GetOrdersQueryHandlerTests()
     {
-        _orderRepositoryMock = new Mock<IOrderRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _productServiceMock = new Mock<IProductService>();
         _mapperMock = new Mock<IMapper>();
+        _loggerMock = new Mock<ILogger<GetOrdersQueryHandler>>();
 
         _handler = new GetOrdersQueryHandler(
-            _orderRepositoryMock.Object,
-            _mapperMock.Object);
+            _unitOfWorkMock.Object,
+            _productServiceMock.Object,
+            _mapperMock.Object,
+            _loggerMock.Object);
     }
 
     [Fact]
@@ -42,22 +50,32 @@ public class GetOrdersQueryHandlerTests
             {
                 Id = Guid.NewGuid(),
                 CustomerId = Guid.NewGuid(),
+                OrderNumber = "ORD-001",
                 Status = OrderStatus.Pending,
                 CreatedAt = DateTime.UtcNow.AddDays(-2),
-                OrderItems = new List<OrderItem>
+                ShippingAddress = "123 Test St",
+                ShippingCity = "Test City",
+                ShippingZipCode = "12345",
+                ShippingCountry = "Test Country",
+                Items = new List<OrderItem>
                 {
-                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 1, UnitPrice = 10.00m }
+                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), ProductName = "Test Product", ProductSku = "TEST-001", Quantity = 1, UnitPrice = 10.00m }
                 }
             },
             new Order
             {
                 Id = Guid.NewGuid(),
                 CustomerId = Guid.NewGuid(),
+                OrderNumber = "ORD-002",
                 Status = OrderStatus.Processing,
                 CreatedAt = DateTime.UtcNow.AddDays(-1),
-                OrderItems = new List<OrderItem>
+                ShippingAddress = "456 Test Ave",
+                ShippingCity = "Test City",
+                ShippingZipCode = "54321",
+                ShippingCountry = "Test Country",
+                Items = new List<OrderItem>
                 {
-                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 2, UnitPrice = 20.00m }
+                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), ProductName = "Test Product 2", ProductSku = "TEST-002", Quantity = 2, UnitPrice = 20.00m }
                 }
             }
         };
@@ -75,8 +93,8 @@ public class GetOrdersQueryHandlerTests
                 {
                     new OrderItemDto
                     {
-                        Id = orders[0].OrderItems.First().Id,
-                        ProductId = orders[0].OrderItems.First().ProductId,
+                        Id = orders[0].Items.First().Id,
+                        ProductId = orders[0].Items.First().ProductId,
                         Quantity = 1,
                         UnitPrice = 10.00m,
                         Subtotal = 10.00m
@@ -94,8 +112,8 @@ public class GetOrdersQueryHandlerTests
                 {
                     new OrderItemDto
                     {
-                        Id = orders[1].OrderItems.First().Id,
-                        ProductId = orders[1].OrderItems.First().ProductId,
+                        Id = orders[1].Items.First().Id,
+                        ProductId = orders[1].Items.First().ProductId,
                         Quantity = 2,
                         UnitPrice = 20.00m,
                         Subtotal = 40.00m
@@ -108,12 +126,11 @@ public class GetOrdersQueryHandlerTests
         {
             Items = orders,
             TotalCount = 2,
-            Page = 1,
-            PageSize = 10,
-            TotalPages = 1
+            CurrentPage = 1,
+            PageSize = 10
         };
 
-        _orderRepositoryMock.Setup(x => x.GetPagedAsync(1, 10, null, null, null))
+        _unitOfWorkMock.Setup(x => x.Orders.GetPagedAsync(1, 10, null, null, null, null, null, CancellationToken.None))
             .ReturnsAsync(pagedResult);
 
         _mapperMock.Setup(x => x.Map<List<OrderDto>>(orders))
@@ -126,14 +143,14 @@ public class GetOrdersQueryHandlerTests
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(2);
         result.TotalCount.Should().Be(2);
-        result.Page.Should().Be(1);
+        result.CurrentPage.Should().Be(1);
         result.PageSize.Should().Be(10);
         result.TotalPages.Should().Be(1);
 
         result.Items.First().Status.Should().Be("Pending");
         result.Items.Last().Status.Should().Be("Processing");
 
-        _orderRepositoryMock.Verify(x => x.GetPagedAsync(1, 10, null, null, null), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetPagedAsync(1, 10, null, null, null, null, null, CancellationToken.None), Times.Once);
         _mapperMock.Verify(x => x.Map<List<OrderDto>>(orders), Times.Once);
     }
 
@@ -155,11 +172,16 @@ public class GetOrdersQueryHandlerTests
             {
                 Id = Guid.NewGuid(),
                 CustomerId = customerId,
+                OrderNumber = "ORD-003",
                 Status = OrderStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
-                OrderItems = new List<OrderItem>
+                ShippingAddress = "789 Test Blvd",
+                ShippingCity = "Test City",
+                ShippingZipCode = "67890",
+                ShippingCountry = "Test Country",
+                Items = new List<OrderItem>
                 {
-                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 1, UnitPrice = 10.00m }
+                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), ProductName = "Test Product", ProductSku = "TEST-001", Quantity = 1, UnitPrice = 10.00m }
                 }
             }
         };
@@ -177,8 +199,8 @@ public class GetOrdersQueryHandlerTests
                 {
                     new OrderItemDto
                     {
-                        Id = orders[0].OrderItems.First().Id,
-                        ProductId = orders[0].OrderItems.First().ProductId,
+                        Id = orders[0].Items.First().Id,
+                        ProductId = orders[0].Items.First().ProductId,
                         Quantity = 1,
                         UnitPrice = 10.00m,
                         Subtotal = 10.00m
@@ -191,12 +213,11 @@ public class GetOrdersQueryHandlerTests
         {
             Items = orders,
             TotalCount = 1,
-            Page = 1,
-            PageSize = 10,
-            TotalPages = 1
+            CurrentPage = 1,
+            PageSize = 10
         };
 
-        _orderRepositoryMock.Setup(x => x.GetPagedAsync(1, 10, customerId, null, null))
+        _unitOfWorkMock.Setup(x => x.Orders.GetPagedAsync(1, 10, customerId, null, null, null, null, CancellationToken.None))
             .ReturnsAsync(pagedResult);
 
         _mapperMock.Setup(x => x.Map<List<OrderDto>>(orders))
@@ -210,7 +231,7 @@ public class GetOrdersQueryHandlerTests
         result.Items.Should().HaveCount(1);
         result.Items.First().CustomerId.Should().Be(customerId);
 
-        _orderRepositoryMock.Verify(x => x.GetPagedAsync(1, 10, customerId, null, null), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetPagedAsync(1, 10, customerId, null, null, null, null, CancellationToken.None), Times.Once);
         _mapperMock.Verify(x => x.Map<List<OrderDto>>(orders), Times.Once);
     }
 
@@ -231,11 +252,16 @@ public class GetOrdersQueryHandlerTests
             {
                 Id = Guid.NewGuid(),
                 CustomerId = Guid.NewGuid(),
+                OrderNumber = "ORD-004",
                 Status = OrderStatus.Processing,
                 CreatedAt = DateTime.UtcNow,
-                OrderItems = new List<OrderItem>
+                ShippingAddress = "321 Test Lane",
+                ShippingCity = "Test City",
+                ShippingZipCode = "13579",
+                ShippingCountry = "Test Country",
+                Items = new List<OrderItem>
                 {
-                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 1, UnitPrice = 10.00m }
+                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), ProductName = "Test Product", ProductSku = "TEST-001", Quantity = 1, UnitPrice = 10.00m }
                 }
             }
         };
@@ -253,8 +279,8 @@ public class GetOrdersQueryHandlerTests
                 {
                     new OrderItemDto
                     {
-                        Id = orders[0].OrderItems.First().Id,
-                        ProductId = orders[0].OrderItems.First().ProductId,
+                        Id = orders[0].Items.First().Id,
+                        ProductId = orders[0].Items.First().ProductId,
                         Quantity = 1,
                         UnitPrice = 10.00m,
                         Subtotal = 10.00m
@@ -267,12 +293,11 @@ public class GetOrdersQueryHandlerTests
         {
             Items = orders,
             TotalCount = 1,
-            Page = 1,
-            PageSize = 10,
-            TotalPages = 1
+            CurrentPage = 1,
+            PageSize = 10
         };
 
-        _orderRepositoryMock.Setup(x => x.GetPagedAsync(1, 10, null, OrderStatus.Processing, null))
+        _unitOfWorkMock.Setup(x => x.Orders.GetPagedAsync(1, 10, null, "Processing", null, null, null, CancellationToken.None))
             .ReturnsAsync(pagedResult);
 
         _mapperMock.Setup(x => x.Map<List<OrderDto>>(orders))
@@ -286,7 +311,7 @@ public class GetOrdersQueryHandlerTests
         result.Items.Should().HaveCount(1);
         result.Items.First().Status.Should().Be("Processing");
 
-        _orderRepositoryMock.Verify(x => x.GetPagedAsync(1, 10, null, OrderStatus.Processing, null), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetPagedAsync(1, 10, null, "Processing", null, null, null, CancellationToken.None), Times.Once);
         _mapperMock.Verify(x => x.Map<List<OrderDto>>(orders), Times.Once);
     }
 
@@ -304,12 +329,11 @@ public class GetOrdersQueryHandlerTests
         {
             Items = new List<Order>(),
             TotalCount = 0,
-            Page = 1,
-            PageSize = 10,
-            TotalPages = 0
+            CurrentPage = 1,
+            PageSize = 10
         };
 
-        _orderRepositoryMock.Setup(x => x.GetPagedAsync(1, 10, null, null, null))
+        _unitOfWorkMock.Setup(x => x.Orders.GetPagedAsync(1, 10, null, null, null, null, null, CancellationToken.None))
             .ReturnsAsync(pagedResult);
 
         _mapperMock.Setup(x => x.Map<List<OrderDto>>(It.IsAny<List<Order>>()))
@@ -322,11 +346,11 @@ public class GetOrdersQueryHandlerTests
         result.Should().NotBeNull();
         result.Items.Should().BeEmpty();
         result.TotalCount.Should().Be(0);
-        result.Page.Should().Be(1);
+        result.CurrentPage.Should().Be(1);
         result.PageSize.Should().Be(10);
         result.TotalPages.Should().Be(0);
 
-        _orderRepositoryMock.Verify(x => x.GetPagedAsync(1, 10, null, null, null), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetPagedAsync(1, 10, null, null, null, null, null, CancellationToken.None), Times.Once);
         _mapperMock.Verify(x => x.Map<List<OrderDto>>(It.IsAny<List<Order>>()), Times.Once);
     }
 
@@ -351,11 +375,16 @@ public class GetOrdersQueryHandlerTests
             {
                 Id = Guid.NewGuid(),
                 CustomerId = Guid.NewGuid(),
+                OrderNumber = "ORD-005",
                 Status = OrderStatus.Pending,
                 CreatedAt = DateTime.UtcNow.AddDays(-3),
-                OrderItems = new List<OrderItem>
+                ShippingAddress = "654 Test Way",
+                ShippingCity = "Test City",
+                ShippingZipCode = "24680",
+                ShippingCountry = "Test Country",
+                Items = new List<OrderItem>
                 {
-                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), Quantity = 1, UnitPrice = 10.00m }
+                    new OrderItem { Id = Guid.NewGuid(), ProductId = Guid.NewGuid(), ProductName = "Test Product", ProductSku = "TEST-001", Quantity = 1, UnitPrice = 10.00m }
                 }
             }
         };
@@ -373,8 +402,8 @@ public class GetOrdersQueryHandlerTests
                 {
                     new OrderItemDto
                     {
-                        Id = orders[0].OrderItems.First().Id,
-                        ProductId = orders[0].OrderItems.First().ProductId,
+                        Id = orders[0].Items.First().Id,
+                        ProductId = orders[0].Items.First().ProductId,
                         Quantity = 1,
                         UnitPrice = 10.00m,
                         Subtotal = 10.00m
@@ -387,13 +416,11 @@ public class GetOrdersQueryHandlerTests
         {
             Items = orders,
             TotalCount = 1,
-            Page = 1,
-            PageSize = 10,
-            TotalPages = 1
+            CurrentPage = 1,
+            PageSize = 10
         };
 
-        _orderRepositoryMock.Setup(x => x.GetPagedAsync(1, 10, null, null, It.Is<(DateTime From, DateTime To)?>(
-                range => range!.Value.From == fromDate && range.Value.To == toDate)))
+        _unitOfWorkMock.Setup(x => x.Orders.GetPagedAsync(1, 10, null, null, fromDate, toDate, null, CancellationToken.None))
             .ReturnsAsync(pagedResult);
 
         _mapperMock.Setup(x => x.Map<List<OrderDto>>(orders))
@@ -407,7 +434,7 @@ public class GetOrdersQueryHandlerTests
         result.Items.Should().HaveCount(1);
         result.Items.First().CreatedAt.Should().BeAfter(fromDate).And.BeBefore(toDate);
 
-        _orderRepositoryMock.Verify(x => x.GetPagedAsync(1, 10, null, null, It.IsAny<(DateTime From, DateTime To)?>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetPagedAsync(1, 10, null, null, fromDate, toDate, null, CancellationToken.None), Times.Once);
         _mapperMock.Verify(x => x.Map<List<OrderDto>>(orders), Times.Once);
     }
 }
