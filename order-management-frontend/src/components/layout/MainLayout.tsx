@@ -20,9 +20,9 @@ const MainLayout: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
         <Header />
-        <Box component="main" sx={{ flexGrow: 1, py: 2 }}>
+        <Box component="main" sx={{ flexGrow: 1, py: 2, px: { xs: 1, sm: 2, md: 3 }, width: '100%' }}>
           <Outlet />
         </Box>
         <Footer />

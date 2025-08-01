@@ -130,9 +130,9 @@ export interface RegisterCustomerDto {
   password: string;
   firstName: string;
   lastName: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  gender?: Gender;
+  phoneNumber?: string | null;
+  dateOfBirth?: Date | null;
+  gender?: Gender | null;
 }
 
 export interface LoginCustomerDto {
@@ -280,9 +280,9 @@ export interface RegisterFormData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  gender?: Gender;
+  phoneNumber?: string | null;
+  dateOfBirth?: Date | null;
+  gender?: number | null;
 }
 
 export interface OrderFormData {

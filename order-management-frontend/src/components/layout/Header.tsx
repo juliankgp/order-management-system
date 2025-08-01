@@ -6,28 +6,29 @@ import {
   Button, 
   Box, 
   IconButton,
-  Badge
+  Badge,
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { 
   ShoppingCart as ShoppingCartIcon,
-  AccountCircle as AccountCircleIcon 
+  AccountCircle as AccountCircleIcon,
+  ExitToApp as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Simulamos estado de autenticación (se implementará en Phase 2)
-  const isAuthenticated = !!localStorage.getItem('authToken');
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    logout();
     navigate('/');
   };
 
@@ -44,7 +45,9 @@ const Header: React.FC = () => {
         </Typography>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {isAuthenticated ? (
+          {isLoading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : isAuthenticated ? (
             <>
               <Button 
                 color="inherit" 
@@ -65,12 +68,31 @@ const Header: React.FC = () => {
                   <ShoppingCartIcon />
                 </Badge>
               </IconButton>
-              <IconButton color="inherit" size="large">
-                <AccountCircleIcon />
+              
+              {/* Usuario info */}
+              {user && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountCircleIcon />
+                  <Chip
+                    label={user.fullName}
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      color: 'white', 
+                      borderColor: 'white',
+                      '& .MuiChip-label': { color: 'white' }
+                    }}
+                  />
+                </Box>
+              )}
+              
+              <IconButton 
+                color="inherit" 
+                onClick={handleLogout}
+                title="Cerrar sesión"
+              >
+                <LogoutIcon />
               </IconButton>
-              <Button color="inherit" onClick={handleLogout}>
-                Logout
-              </Button>
             </>
           ) : (
             <>
