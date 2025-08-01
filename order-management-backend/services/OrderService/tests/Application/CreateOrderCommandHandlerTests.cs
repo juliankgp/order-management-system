@@ -14,6 +14,7 @@ namespace OrderService.Tests.Application;
 
 public class CreateOrderCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
     private readonly Mock<ICustomerService> _customerServiceMock;
     private readonly Mock<IProductService> _productServiceMock;
@@ -24,6 +25,7 @@ public class CreateOrderCommandHandlerTests
 
     public CreateOrderCommandHandlerTests()
     {
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _orderRepositoryMock = new Mock<IOrderRepository>();
         _customerServiceMock = new Mock<ICustomerService>();
         _productServiceMock = new Mock<IProductService>();
@@ -31,8 +33,11 @@ public class CreateOrderCommandHandlerTests
         _mapperMock = new Mock<IMapper>();
         _loggerMock = new Mock<ILogger<CreateOrderCommandHandler>>();
 
+        // Setup UnitOfWork to return the mocked repository
+        _unitOfWorkMock.Setup(x => x.Orders).Returns(_orderRepositoryMock.Object);
+
         _handler = new CreateOrderCommandHandler(
-            _orderRepositoryMock.Object,
+            _unitOfWorkMock.Object,
             _customerServiceMock.Object,
             _productServiceMock.Object,
             _eventBusServiceMock.Object,
@@ -155,6 +160,7 @@ public class CreateOrderCommandHandlerTests
         _customerServiceMock.Verify(x => x.GetCustomerAsync(customerId), Times.Once);
         _productServiceMock.Verify(x => x.GetProductAsync(productId), Times.Once);
         _orderRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Once);
     }
 
