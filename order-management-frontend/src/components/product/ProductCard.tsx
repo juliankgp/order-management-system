@@ -15,42 +15,37 @@ import {
   Visibility as ViewIcon,
   ShoppingCart as CartIcon,
 } from '@mui/icons-material';
-import type { ProductDto } from '../../types';
+import type { ProductDto } from '../../types/entities';
+import { useCart } from '../../contexts/CartContext';
 
 interface ProductCardProps {
   product: ProductDto;
   onViewDetails?: (product: ProductDto) => void;
-  onAddToCart?: (product: ProductDto, quantity: number) => void;
-  cartQuantity?: number;
-  onUpdateCartQuantity?: (product: ProductDto, quantity: number) => void;
-  showAddToCart?: boolean;
   showQuantityControls?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onViewDetails,
-  onAddToCart,
-  cartQuantity = 0,
-  onUpdateCartQuantity,
-  showAddToCart = true,
-  showQuantityControls = false,
+  showQuantityControls = true,
 }) => {
+  const { addItem, updateQuantity, getItemQuantity, isInCart } = useCart();
+  const cartQuantity = getItemQuantity(product.id);
+  const inCart = isInCart(product.id);
+
   const handleAddToCart = () => {
-    if (onAddToCart) {
-      onAddToCart(product, 1);
-    }
+    addItem(product, 1);
   };
 
   const handleIncreaseQuantity = () => {
-    if (onUpdateCartQuantity && cartQuantity < product.stockQuantity) {
-      onUpdateCartQuantity(product, cartQuantity + 1);
+    if (cartQuantity < product.stockQuantity) {
+      updateQuantity(product.id, cartQuantity + 1);
     }
   };
 
   const handleDecreaseQuantity = () => {
-    if (onUpdateCartQuantity && cartQuantity > 0) {
-      onUpdateCartQuantity(product, cartQuantity - 1);
+    if (cartQuantity > 0) {
+      updateQuantity(product.id, cartQuantity - 1);
     }
   };
 
@@ -251,7 +246,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </Box>
           )}
 
-          {showQuantityControls && cartQuantity > 0 && (
+          {showQuantityControls && inCart && cartQuantity > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <IconButton
                 size="small"
@@ -273,18 +268,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </Box>
           )}
 
-          {showAddToCart && (
-            <Button
-              variant="contained"
-              fullWidth
-              startIcon={<CartIcon />}
-              onClick={handleAddToCart}
-              disabled={isOutOfStock || !product.isActive}
-              sx={{ mt: 1 }}
-            >
-              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-            </Button>
-          )}
+          <Button
+            variant={inCart ? "outlined" : "contained"}
+            fullWidth
+            startIcon={<CartIcon />}
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || !product.isActive}
+            sx={{ mt: 1 }}
+          >
+            {isOutOfStock 
+              ? 'Out of Stock' 
+              : inCart 
+                ? `Add More (${cartQuantity} in cart)` 
+                : 'Add to Cart'
+            }
+          </Button>
         </Box>
       </CardContent>
     </Card>

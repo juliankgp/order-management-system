@@ -151,8 +151,6 @@ const ProductsPage: React.FC = () => {
         error={error}
         onPageChange={handlePageChange}
         onViewDetails={handleViewDetails}
-        onAddToCart={handleAddToCart}
-        showAddToCart={true}
         emptyMessage="No products found matching your criteria"
       />
 

@@ -1,65 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
   Button,
-  Divider,
   Alert,
-  Paper,
-  Chip,
-  IconButton,
   Drawer,
-  AppBar,
-  Toolbar,
+  IconButton,
+  Badge
 } from '@mui/material';
 import {
-  ShoppingCart as CartIcon,
   Close as CloseIcon,
-  LocalShipping as ShippingIcon,
-  Receipt as ReceiptIcon,
+  ShoppingCart as CartIcon,
+  ArrowBack as BackIcon
 } from '@mui/icons-material';
 import { useCart } from '../../contexts/CartContext';
-import CartItem from './CartItem';
+import { CartItem } from './CartItem';
+import { CartSummary } from './CartSummary';
 
-export interface CartProps {
+interface CartProps {
   open?: boolean;
   onClose?: () => void;
   onCheckout?: () => void;
-  variant?: 'drawer' | 'inline';
+  variant?: 'drawer' | 'page';
 }
 
-const Cart: React.FC<CartProps> = ({
-  open = false,
-  onClose,
+export const Cart: React.FC<CartProps> = ({ 
+  open = false, 
+  onClose, 
   onCheckout,
   variant = 'drawer'
 }) => {
-  const { cart, updateQuantity, removeItem, clearCart, hasItems } = useCart();
-  const [loading, setLoading] = useState(false);
-
-  const handleUpdateQuantity = async (productId: string, quantity: number) => {
-    setLoading(true);
-    try {
-      updateQuantity(productId, quantity);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveItem = async (productId: string) => {
-    setLoading(true);
-    try {
-      removeItem(productId);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClearCart = () => {
-    if (window.confirm('Are you sure you want to clear your cart?')) {
-      clearCart();
-    }
-  };
+  const { state, clearCart } = useCart();
+  const { cart, error } = state;
 
   const handleCheckout = () => {
     if (onCheckout) {
@@ -70,152 +42,109 @@ const Cart: React.FC<CartProps> = ({
     }
   };
 
-  const CartContent = () => (
+  const handleClearCart = () => {
+    clearCart();
+  };
+
+  const cartContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: 2, borderBottom: '1px solid #eee' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CartIcon />
-            <Typography variant="h6">
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {variant === 'page' ? (
+              <IconButton onClick={onClose} sx={{ mr: 1 }}>
+                <BackIcon />
+              </IconButton>
+            ) : null}
+            <Typography variant="h6" component="h1">
               Shopping Cart
             </Typography>
-            {hasItems && (
-              <Chip 
-                label={cart.itemCount} 
-                size="small" 
-                color="primary" 
-              />
-            )}
+            <Badge badgeContent={cart.itemCount} color="primary" sx={{ ml: 2 }}>
+              <CartIcon />
+            </Badge>
           </Box>
+          
           {variant === 'drawer' && onClose && (
-            <IconButton onClick={onClose}>
+            <IconButton onClick={onClose} aria-label="Close cart">
               <CloseIcon />
             </IconButton>
           )}
         </Box>
+        
+        {cart.itemCount > 0 && (
+          <Button
+            variant="text"
+            color="error"
+            size="small"
+            onClick={handleClearCart}
+            sx={{ mt: 1 }}
+          >
+            Clear Cart
+          </Button>
+        )}
       </Box>
+
+      {/* Error Display */}
+      {error && (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
 
       {/* Cart Items */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-        {!hasItems ? (
+        {cart.itemCount === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CartIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+            <CartIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Your cart is empty
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add some products to get started!
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Start shopping to add items to your cart
             </Typography>
+            {onClose && (
+              <Button
+                variant="contained"
+                onClick={onClose}
+                startIcon={<BackIcon />}
+              >
+                Continue Shopping
+              </Button>
+            )}
           </Box>
         ) : (
-          <>
+          <Box>
             {cart.items.map((item) => (
-              <CartItem
-                key={item.product.id}
-                item={item}
-                onUpdateQuantity={handleUpdateQuantity}
-                onRemove={handleRemoveItem}
-                loading={loading}
-              />
+              <CartItem key={item.product.id} item={item} />
             ))}
-
-            {/* Clear Cart Button */}
-            <Box sx={{ textAlign: 'right', mt: 2 }}>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleClearCart}
-                disabled={loading}
-                size="small"
-              >
-                Clear Cart
-              </Button>
-            </Box>
-          </>
+          </Box>
         )}
       </Box>
 
       {/* Cart Summary */}
-      {hasItems && (
-        <Paper sx={{ p: 2, m: 2, mt: 0 }} elevation={1}>
-          <Typography variant="h6" gutterBottom>
-            Order Summary
-          </Typography>
+      {cart.itemCount > 0 && (
+        <Box sx={{ p: 2, borderTop: '1px solid #eee' }}>
+          <CartSummary
+            compact={variant === 'drawer'}
+            showCheckoutButton={true}
+            onCheckout={handleCheckout}
+          />
           
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">
-              Subtotal ({cart.itemCount} items)
-            </Typography>
-            <Typography variant="body2">
-              ${cart.subtotal.toFixed(2)}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">
-              Tax (10%)
-            </Typography>
-            <Typography variant="body2">
-              ${cart.taxAmount.toFixed(2)}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ShippingIcon sx={{ fontSize: 16 }} />
-              <Typography variant="body2">
-                Shipping
-              </Typography>
-            </Box>
-            <Typography variant="body2">
-              {cart.shippingCost === 0 ? 'FREE' : `$${cart.shippingCost.toFixed(2)}`}
-            </Typography>
-          </Box>
-
-          {cart.subtotal > 100 && cart.shippingCost === 0 && (
-            <Alert severity="success" sx={{ mb: 2, py: 0 }}>
-              <Typography variant="caption">
-                🎉 You qualify for free shipping!
-              </Typography>
-            </Alert>
+          {variant === 'drawer' && onClose && (
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={onClose}
+              sx={{ mt: 2 }}
+              startIcon={<BackIcon />}
+            >
+              Continue Shopping
+            </Button>
           )}
-
-          {cart.subtotal <= 100 && cart.shippingCost > 0 && (
-            <Alert severity="info" sx={{ mb: 2, py: 0 }}>
-              <Typography variant="caption">
-                Add ${(100 - cart.subtotal).toFixed(2)} more for free shipping
-              </Typography>
-            </Alert>
-          )}
-
-          <Divider sx={{ my: 1 }} />
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Total
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              ${cart.total.toFixed(2)}
-            </Typography>
-          </Box>
-
-          <Button
-            variant="contained"
-            fullWidth
-            size="large"
-            onClick={handleCheckout}
-            disabled={loading || !hasItems}
-            startIcon={<ReceiptIcon />}
-            sx={{ mb: 1 }}
-          >
-            Proceed to Checkout
-          </Button>
-
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-            Tax and shipping calculated at checkout
-          </Typography>
-        </Paper>
+        </Box>
       )}
     </Box>
   );
@@ -230,16 +159,36 @@ const Cart: React.FC<CartProps> = ({
           sx: { width: { xs: '100%', sm: 400 } }
         }}
       >
-        <CartContent />
+        {cartContent}
       </Drawer>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 400 }}>
-      <CartContent />
+    <Box sx={{ width: '100%', minHeight: '80vh' }}>
+      {cartContent}
     </Box>
   );
 };
 
-export default Cart;
+// Cart Icon component for header/navigation
+interface CartIconButtonProps {
+  onClick: () => void;
+}
+
+export const CartIconButton: React.FC<CartIconButtonProps> = ({ onClick }) => {
+  const { state } = useCart();
+  const { cart } = state;
+
+  return (
+    <IconButton
+      onClick={onClick}
+      color="inherit"
+      aria-label="Open shopping cart"
+    >
+      <Badge badgeContent={cart.itemCount} color="error">
+        <CartIcon />
+      </Badge>
+    </IconButton>
+  );
+};

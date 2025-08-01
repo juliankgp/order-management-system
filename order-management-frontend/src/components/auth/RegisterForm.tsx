@@ -16,7 +16,6 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import {
   Visibility,
   VisibilityOff,
@@ -131,7 +130,7 @@ const RegisterForm: React.FC = () => {
         flexDirection: 'column',
         gap: 3,
         width: '100%',
-        maxWidth: 600,
+        maxWidth: '100%',
       }}
     >
       {/* Título */}
@@ -155,9 +154,9 @@ const RegisterForm: React.FC = () => {
       )}
 
       {/* Datos básicos */}
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
         {/* Nombre */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="firstName"
             control={control}
@@ -184,10 +183,10 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
+        </Box>
 
         {/* Apellido */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="lastName"
             control={control}
@@ -214,8 +213,8 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Email */}
       <Controller
@@ -247,9 +246,9 @@ const RegisterForm: React.FC = () => {
       />
 
       {/* Contraseñas */}
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
         {/* Contraseña */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="password"
             control={control}
@@ -288,10 +287,10 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
+        </Box>
 
         {/* Confirmar Contraseña */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="confirmPassword"
             control={control}
@@ -330,17 +329,17 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Información adicional */}
       <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
         Información Adicional (Opcional)
       </Typography>
 
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
         {/* Teléfono */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="phoneNumber"
             control={control}
@@ -367,10 +366,10 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
+        </Box>
 
         {/* Fecha de Nacimiento */}
-        <Grid item xs={12} sm={6}>
+        <Box sx={{ flex: 1 }}>
           <Controller
             name="dateOfBirth"
             control={control}
@@ -400,8 +399,8 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Género */}
       <Controller

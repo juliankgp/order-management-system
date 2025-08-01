@@ -9,6 +9,7 @@ import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import ProductsPage from '../pages/ProductsPage';
 import OrdersPage from '../pages/OrdersPage';
+import CheckoutPage from '../pages/CheckoutPage';
 
 // Configuración de rutas de la aplicación
 export const routes: RouteConfig[] = [
@@ -47,6 +48,13 @@ export const routes: RouteConfig[] = [
     requiresAuth: true,
     title: 'My Orders',
     description: 'View and manage your orders'
+  },
+  {
+    path: '/checkout',
+    component: CheckoutPage,
+    requiresAuth: true,
+    title: 'Checkout',
+    description: 'Complete your order'
   }
 ];
 

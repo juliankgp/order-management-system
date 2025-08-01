@@ -303,3 +303,14 @@ export interface OrderFormData {
     quantity: number;
   }[];
 }
+
+// Paged response type for API responses (using items for consistency with api.ts)
+export interface PagedResponse<T> {
+  items: T[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}

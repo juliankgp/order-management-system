@@ -18,8 +18,8 @@ export interface PagedResult<T = unknown> {
   hasNext: boolean;
 }
 
-// Alias for consistency
-export type PagedResponse<T = unknown> = PagedResult<T>;
+// Alias for consistency - commented out to avoid duplicate export with entities.ts
+// export type PagedResponse<T = unknown> = PagedResult<T>;
 
 // Tipos para parámetros de query
 export interface PaginationParams {

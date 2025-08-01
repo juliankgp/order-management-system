@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   AppBar, 
   Toolbar, 
@@ -6,22 +6,22 @@ import {
   Button, 
   Box, 
   IconButton,
-  Badge,
   Chip,
   CircularProgress
 } from '@mui/material';
 import { 
-  ShoppingCart as ShoppingCartIcon,
   AccountCircle as AccountCircleIcon,
   ExitToApp as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
+import { CartIconButton, Cart } from '../cart/Cart';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const [cartOpen, setCartOpen] = useState(false);
   
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -30,6 +30,19 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleCartOpen = () => {
+    setCartOpen(true);
+  };
+
+  const handleCartClose = () => {
+    setCartOpen(false);
+  };
+
+  const handleCheckout = () => {
+    setCartOpen(false);
+    navigate('/checkout');
   };
 
   return (
@@ -63,11 +76,7 @@ const Header: React.FC = () => {
               >
                 My Orders
               </Button>
-              <IconButton color="inherit" size="large">
-                <Badge badgeContent={0} color="secondary">
-                  <ShoppingCartIcon />
-                </Badge>
-              </IconButton>
+              <CartIconButton onClick={handleCartOpen} />
               
               {/* Usuario info */}
               {user && (
@@ -114,6 +123,14 @@ const Header: React.FC = () => {
           )}
         </Box>
       </Toolbar>
+      
+      {/* Cart Drawer */}
+      <Cart
+        open={cartOpen}
+        onClose={handleCartClose}
+        onCheckout={handleCheckout}
+        variant="drawer"
+      />
     </AppBar>
   );
 };

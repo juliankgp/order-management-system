@@ -6,187 +6,173 @@ import {
   Typography,
   IconButton,
   TextField,
-  Button,
   Chip,
+  Avatar
 } from '@mui/material';
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
-  Delete as DeleteIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
-import type { CartItem as CartItemType } from '../../types';
+import type { CartItem as CartItemType } from '../../types/entities';
+import { useCart } from '../../contexts/CartContext';
 
-export interface CartItemProps {
+interface CartItemProps {
   item: CartItemType;
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemove: (productId: string) => void;
-  loading?: boolean;
+  compact?: boolean;
 }
 
-const CartItem: React.FC<CartItemProps> = ({
-  item,
-  onUpdateQuantity,
-  onRemove,
-  loading = false
-}) => {
+export const CartItem: React.FC<CartItemProps> = ({ item, compact = false }) => {
+  const { updateQuantity, removeItem } = useCart();
   const { product, quantity, subtotal } = item;
-  const isOutOfStock = product.stockQuantity === 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity < product.minimumStock;
-  const maxQuantity = Math.min(product.stockQuantity, 99);
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity < 1) {
-      onRemove(product.id);
-    } else if (newQuantity <= maxQuantity) {
-      onUpdateQuantity(product.id, newQuantity);
+      handleRemove();
+    } else {
+      updateQuantity(product.id, newQuantity);
     }
   };
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(event.target.value, 10);
-    if (!isNaN(value)) {
-      handleQuantityChange(value);
-    }
+  const handleRemove = () => {
+    removeItem(product.id);
   };
+
+  const isOutOfStock = product.stockQuantity === 0;
+  const isLowStock = product.stockQuantity > 0 && product.stockQuantity < 10;
+  const maxQuantity = Math.min(product.stockQuantity, 99);
+
+  if (compact) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', py: 1, borderBottom: '1px solid #eee' }}>
+        <Avatar
+          src={product.imageUrl || '/placeholder-product.png'}
+          alt={product.name}
+          sx={{ width: 40, height: 40, mr: 2 }}
+        />
+        
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" noWrap>
+            {product.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            ${product.price.toFixed(2)} × {quantity}
+          </Typography>
+        </Box>
+        
+        <Typography variant="body2" fontWeight={600}>
+          ${subtotal.toFixed(2)}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Card sx={{ mb: 2, opacity: loading ? 0.7 : 1 }}>
-      <CardContent>
+    <Card sx={{ mb: 2 }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          {/* Product Image */}
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              backgroundColor: 'grey.200',
-              borderRadius: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              overflow: 'hidden',
-            }}
-          >
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                No Image
-              </Typography>
-            )}
-          </Box>
-
-          {/* Product Details */}
-          <Box sx={{ flex: 1 }}>
+          <Avatar
+            src={product.imageUrl || '/placeholder-product.png'}
+            alt={product.name}
+            sx={{ width: 80, height: 80 }}
+            variant="rounded"
+          />
+          
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-              <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" component="h3" noWrap>
                 {product.name}
               </Typography>
               <IconButton
-                onClick={() => onRemove(product.id)}
-                disabled={loading}
-                color="error"
+                onClick={handleRemove}
                 size="small"
-                sx={{ ml: 1 }}
+                color="error"
+                aria-label="Remove item"
               >
                 <DeleteIcon />
               </IconButton>
             </Box>
-
+            
             {product.description && (
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {product.description.length > 100 
-                  ? `${product.description.substring(0, 100)}...` 
-                  : product.description
-                }
+                {product.description}
               </Typography>
             )}
-
+            
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 SKU: {product.sku}
               </Typography>
               
               {isOutOfStock && (
-                <Chip label="Out of Stock" color="error" size="small" />
+                <Chip
+                  label="Out of Stock"
+                  color="error"
+                  size="small"
+                />
               )}
               
               {isLowStock && !isOutOfStock && (
-                <Chip label="Low Stock" color="warning" size="small" />
+                <Chip
+                  label={`Only ${product.stockQuantity} left`}
+                  color="warning"
+                  size="small"
+                />
               )}
             </Box>
-
+            
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {/* Quantity Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconButton
                   onClick={() => handleQuantityChange(quantity - 1)}
-                  disabled={loading || quantity <= 1}
+                  disabled={quantity <= 1 || isOutOfStock}
                   size="small"
+                  aria-label="Decrease quantity"
                 >
                   <RemoveIcon />
                 </IconButton>
                 
                 <TextField
+                  type="number"
                   value={quantity}
-                  onChange={handleInputChange}
-                  disabled={loading}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    if (value >= 1 && value <= maxQuantity) {
+                      handleQuantityChange(value);
+                    }
+                  }}
+                  disabled={isOutOfStock}
                   size="small"
-                  sx={{ width: 60 }}
+                  sx={{ width: 80 }}
                   inputProps={{
                     min: 1,
                     max: maxQuantity,
-                    type: 'number',
-                    style: { textAlign: 'center' }
+                    'aria-label': 'Quantity'
                   }}
                 />
                 
                 <IconButton
                   onClick={() => handleQuantityChange(quantity + 1)}
-                  disabled={loading || quantity >= maxQuantity}
+                  disabled={quantity >= maxQuantity || isOutOfStock}
                   size="small"
+                  aria-label="Increase quantity"
                 >
                   <AddIcon />
                 </IconButton>
-                
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                  Max: {maxQuantity}
-                </Typography>
               </Box>
-
-              {/* Price Information */}
+              
               <Box sx={{ textAlign: 'right' }}>
                 <Typography variant="body2" color="text.secondary">
                   ${product.price.toFixed(2)} each
                 </Typography>
-                <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" color="primary" fontWeight={600}>
                   ${subtotal.toFixed(2)}
                 </Typography>
               </Box>
             </Box>
-
-            {/* Stock Warning */}
-            {quantity > product.stockQuantity && (
-              <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-                Warning: Only {product.stockQuantity} items available in stock
-              </Typography>
-            )}
           </Box>
         </Box>
       </CardContent>
     </Card>
   );
 };
-
-export default CartItem;

@@ -7,7 +7,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import ProductCard from './ProductCard';
-import type { ProductDto, PagedResponse } from '../../types';
+import type { ProductDto, PagedResponse } from '../../types/entities';
 
 interface ProductListProps {
   products: PagedResponse<ProductDto> | null;
@@ -15,10 +15,6 @@ interface ProductListProps {
   error?: string | null;
   onPageChange?: (page: number) => void;
   onViewDetails?: (product: ProductDto) => void;
-  onAddToCart?: (product: ProductDto, quantity: number) => void;
-  cartQuantities?: Record<string, number>;
-  onUpdateCartQuantity?: (product: ProductDto, quantity: number) => void;
-  showAddToCart?: boolean;
   showQuantityControls?: boolean;
   emptyMessage?: string;
   skeletonCount?: number;
@@ -56,11 +52,7 @@ const ProductList: React.FC<ProductListProps> = ({
   error = null,
   onPageChange,
   onViewDetails,
-  onAddToCart,
-  cartQuantities = {},
-  onUpdateCartQuantity,
-  showAddToCart = true,
-  showQuantityControls = false,
+  showQuantityControls = true,
   emptyMessage = "No products found",
   skeletonCount = 8,
 }) => {
@@ -130,10 +122,6 @@ const ProductList: React.FC<ProductListProps> = ({
             key={product.id}
             product={product}
             onViewDetails={onViewDetails}
-            onAddToCart={onAddToCart}
-            cartQuantity={cartQuantities[product.id] || 0}
-            onUpdateCartQuantity={onUpdateCartQuantity}
-            showAddToCart={showAddToCart}
             showQuantityControls={showQuantityControls}
           />
         ))}

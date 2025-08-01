@@ -20,7 +20,7 @@ const RegisterPage: React.FC = () => {
         sx={{ 
           p: { xs: 3, sm: 4, md: 6 }, 
           width: '100%',
-          maxWidth: { xs: 600, sm: 800, md: 1000, lg: 1100, xl: 1200 },
+          maxWidth: { xs: 500, sm: 600, md: 700, lg: 800 },
           borderRadius: 2,
         }}
       >
