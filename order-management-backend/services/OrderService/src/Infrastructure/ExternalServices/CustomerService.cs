@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OrderService.Application.DTOs;
-using OrderService.Application.Interfaces;
 
 namespace OrderService.Infrastructure.ExternalServices;
 
@@ -18,7 +17,7 @@ public class CustomerService : OrderService.Application.Interfaces.ICustomerServ
     {
         _httpClient = httpClient;
         _logger = logger;
-        _baseUrl = Environment.GetEnvironmentVariable("CUSTOMER_SERVICE_URL") ?? "http://localhost:5003";
+        _baseUrl = Environment.GetEnvironmentVariable("CUSTOMER_SERVICE_URL") ?? "https://localhost:5003";
     }
 
     public async Task<ValidationResponseDto> ValidateCustomerExistsAsync(Guid customerId, CancellationToken cancellationToken = default)
@@ -63,7 +62,7 @@ public class CustomerService : OrderService.Application.Interfaces.ICustomerServ
             _logger.LogInformation("Getting customer information for {CustomerId}", customerId);
 
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/customers/{customerId}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
