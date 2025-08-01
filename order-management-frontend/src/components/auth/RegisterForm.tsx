@@ -16,6 +16,7 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Visibility,
   VisibilityOff,
@@ -130,19 +131,19 @@ const RegisterForm: React.FC = () => {
         flexDirection: 'column',
         gap: 3,
         width: '100%',
-        maxWidth: '100%',
+        maxWidth: 600,
       }}
     >
-      {/* Title */}
+      {/* Título */}
       <Typography variant="h4" component="h1" textAlign="center" gutterBottom>
-        Create Account
+        Crear Cuenta
       </Typography>
 
       <Typography variant="body2" color="text.secondary" textAlign="center">
-        Complete your information to create your account
+        Completa tus datos para crear tu cuenta
       </Typography>
 
-      {/* Global Error */}
+      {/* Error global */}
       {currentError && (
         <Alert 
           severity="error" 
@@ -153,17 +154,17 @@ const RegisterForm: React.FC = () => {
         </Alert>
       )}
 
-      {/* Basic Information */}
-      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-        {/* First Name */}
-        <Box sx={{ flex: 1 }}>
+      {/* Datos básicos */}
+      <Grid container spacing={2}>
+        {/* Nombre */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="firstName"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="First Name *"
+                label="Nombre *"
                 fullWidth
                 error={!!errors.firstName}
                 helperText={errors.firstName?.message}
@@ -179,21 +180,21 @@ const RegisterForm: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                placeholder="Your first name"
+                placeholder="Tu nombre"
               />
             )}
           />
-        </Box>
+        </Grid>
 
-        {/* Last Name */}
-        <Box sx={{ flex: 1 }}>
+        {/* Apellido */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="lastName"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Last Name *"
+                label="Apellido *"
                 fullWidth
                 error={!!errors.lastName}
                 helperText={errors.lastName?.message}
@@ -209,12 +210,12 @@ const RegisterForm: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                placeholder="Your last name"
+                placeholder="Tu apellido"
               />
             )}
           />
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
 
       {/* Email */}
       <Controller
@@ -240,22 +241,22 @@ const RegisterForm: React.FC = () => {
                 </InputAdornment>
               ),
             }}
-            placeholder="example@email.com"
+            placeholder="ejemplo@correo.com"
           />
         )}
       />
 
-      {/* Passwords */}
-      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-        {/* Password */}
-        <Box sx={{ flex: 1 }}>
+      {/* Contraseñas */}
+      <Grid container spacing={2}>
+        {/* Contraseña */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="password"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Password *"
+                label="Contraseña *"
                 type={showPassword ? 'text' : 'password'}
                 fullWidth
                 error={!!errors.password}
@@ -283,21 +284,21 @@ const RegisterForm: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                placeholder="Min. 8 characters"
+                placeholder="Min. 8 caracteres"
               />
             )}
           />
-        </Box>
+        </Grid>
 
-        {/* Confirm Password */}
-        <Box sx={{ flex: 1 }}>
+        {/* Confirmar Contraseña */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="confirmPassword"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Confirm Password *"
+                label="Confirmar Contraseña *"
                 type={showConfirmPassword ? 'text' : 'password'}
                 fullWidth
                 error={!!errors.confirmPassword}
@@ -325,28 +326,28 @@ const RegisterForm: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                placeholder="Repeat your password"
+                placeholder="Repite tu contraseña"
               />
             )}
           />
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
 
-      {/* Additional Information */}
+      {/* Información adicional */}
       <Typography variant="h6" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
-        Additional Information (Optional)
+        Información Adicional (Opcional)
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-        {/* Phone Number */}
-        <Box sx={{ flex: 1 }}>
+      <Grid container spacing={2}>
+        {/* Teléfono */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="phoneNumber"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Phone Number"
+                label="Teléfono"
                 fullWidth
                 error={!!errors.phoneNumber}
                 helperText={errors.phoneNumber?.message}
@@ -366,17 +367,17 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Box>
+        </Grid>
 
-        {/* Date of Birth */}
-        <Box sx={{ flex: 1 }}>
+        {/* Fecha de Nacimiento */}
+        <Grid item xs={12} sm={6}>
           <Controller
             name="dateOfBirth"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Date of Birth"
+                label="Fecha de Nacimiento"
                 type="date"
                 fullWidth
                 error={!!errors.dateOfBirth}
@@ -399,19 +400,19 @@ const RegisterForm: React.FC = () => {
               />
             )}
           />
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
 
-      {/* Gender */}
+      {/* Género */}
       <Controller
         name="gender"
         control={control}
         render={({ field }) => (
           <FormControl fullWidth error={!!errors.gender}>
-            <InputLabel>Gender</InputLabel>
+            <InputLabel>Género</InputLabel>
             <Select
               {...field}
-              label="Gender"
+              label="Género"
               disabled={isLoading || isSubmitting}
               onChange={(e) => {
                 field.onChange(e);
@@ -419,7 +420,7 @@ const RegisterForm: React.FC = () => {
               }}
             >
               <MenuItem value="">
-                <em>Select</em>
+                <em>Seleccionar</em>
               </MenuItem>
               {genderOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -436,21 +437,21 @@ const RegisterForm: React.FC = () => {
         )}
       />
 
-      {/* Password Requirements */}
+      {/* Requisitos de contraseña */}
       {watchPassword && (
         <Alert severity="info" sx={{ mt: 1 }}>
           <Typography variant="caption">
-            <strong>Password requirements:</strong><br />
-            • At least 8 characters<br />
-            • One uppercase letter<br />
-            • One lowercase letter<br />
-            • One number<br />
-            • One special character
+            <strong>Requisitos de contraseña:</strong><br />
+            • Al menos 8 caracteres<br />
+            • Una letra mayúscula<br />
+            • Una letra minúscula<br />
+            • Un número<br />
+            • Un carácter especial
           </Typography>
         </Alert>
       )}
 
-      {/* Submit Button */}
+      {/* Botón de Submit */}
       <Button
         type="submit"
         variant="contained"
@@ -475,14 +476,14 @@ const RegisterForm: React.FC = () => {
                 marginTop: '-10px',
               }}
             />
-            Creating account...
+            Creando cuenta...
           </>
         ) : (
-          'Create Account'
+          'Crear Cuenta'
         )}
       </Button>
 
-      {/* Clear Button */}
+      {/* Botón de Limpiar */}
       <Button
         variant="outlined"
         onClick={() => {
@@ -492,13 +493,13 @@ const RegisterForm: React.FC = () => {
         disabled={isLoading || isSubmitting}
         sx={{ py: 1.5 }}
       >
-        Clear Form
+        Limpiar Formulario
       </Button>
 
-      {/* Link to Login */}
+      {/* Link a login */}
       <Box textAlign="center" mt={2}>
         <Typography variant="body2" color="text.secondary">
-          Already have an account?{' '}
+          ¿Ya tienes una cuenta?{' '}
           <Link
             component="button"
             type="button"
@@ -512,18 +513,18 @@ const RegisterForm: React.FC = () => {
               },
             }}
           >
-            Sign in here
+            Inicia sesión aquí
           </Link>
         </Typography>
       </Box>
 
-      {/* Development Information */}
+      {/* Información de desarrollo */}
       {import.meta.env.DEV && (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="caption">
-            <strong>Development Mode:</strong><br />
-            Fields marked with * are required. 
-            Password must meet all security requirements.
+            <strong>Modo Desarrollo:</strong><br />
+            Los campos marcados con * son obligatorios. 
+            La contraseña debe cumplir todos los requisitos de seguridad.
           </Typography>
         </Alert>
       )}

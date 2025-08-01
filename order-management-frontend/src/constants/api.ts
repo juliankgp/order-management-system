@@ -20,10 +20,13 @@ export const API_ENDPOINTS = {
   },
   // Product endpoints  
   PRODUCTS: {
+    GET_ALL: '/api/products',
     LIST: '/api/products',
+    GET_BY_ID: '/api/products/{id}',
     DETAIL: '/api/products/{id}',
     VALIDATE: '/api/products/{id}/validate',
     VALIDATE_STOCK: '/api/products/validate-stock',
+    GET_BATCH: '/api/products/batch',
     BATCH: '/api/products/batch',
     TEST: '/api/products/test',
     HEALTH: '/api/products/health'

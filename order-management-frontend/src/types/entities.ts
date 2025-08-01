@@ -70,12 +70,14 @@ export interface ProductDto {
   description?: string;
   sku: string;
   price: number;
-  stock: number;
+  stockQuantity: number;
   minimumStock: number;
-  category: string;
+  category?: string;
   brand?: string;
   weight?: number;
-  dimensions?: string;
+  length?: number;
+  width?: number;
+  height?: number;
   imageUrl?: string;
   isActive: boolean;
   tags?: string;
@@ -239,6 +241,15 @@ export interface ProductFilters {
   pageSize?: number;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+}
+
+export interface ProductFilter {
+  search?: string;
+  category?: string;
+  isActive?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
 }
 
 export interface OrderFilters {

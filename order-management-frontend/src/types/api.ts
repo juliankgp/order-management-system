@@ -18,6 +18,9 @@ export interface PagedResult<T = unknown> {
   hasNext: boolean;
 }
 
+// Alias for consistency
+export type PagedResponse<T = unknown> = PagedResult<T>;
+
 // Tipos para parámetros de query
 export interface PaginationParams {
   page?: number;
