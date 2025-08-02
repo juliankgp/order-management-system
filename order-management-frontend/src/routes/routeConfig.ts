@@ -10,6 +10,7 @@ import RegisterPage from '../pages/RegisterPage';
 import ProductsPage from '../pages/ProductsPage';
 import OrdersPage from '../pages/OrdersPage';
 import CheckoutPage from '../pages/CheckoutPage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 // Configuración de rutas de la aplicación
 export const routes: RouteConfig[] = [
@@ -55,6 +56,13 @@ export const routes: RouteConfig[] = [
     requiresAuth: true,
     title: 'Checkout',
     description: 'Complete your order'
+  },
+  {
+    path: '*',
+    component: NotFoundPage,
+    requiresAuth: false,
+    title: '404 - Page Not Found',
+    description: 'The requested page could not be found'
   }
 ];
 
