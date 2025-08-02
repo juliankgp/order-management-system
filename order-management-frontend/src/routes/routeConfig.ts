@@ -1,16 +1,17 @@
+import React from 'react';
 import { type RouteConfig } from '../types';
 
 // Layout components
 import MainLayout from '../components/layout/MainLayout';
 
-// Page components
-import HomePage from '../pages/HomePage';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import ProductsPage from '../pages/ProductsPage';
-import OrdersPage from '../pages/OrdersPage';
-import CheckoutPage from '../pages/CheckoutPage';
-import NotFoundPage from '../pages/NotFoundPage';
+// Lazy-loaded page components for better performance
+const HomePage = React.lazy(() => import('../pages/HomePage'));
+const LoginPage = React.lazy(() => import('../pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('../pages/RegisterPage'));
+const ProductsPage = React.lazy(() => import('../pages/ProductsPage'));
+const OrdersPage = React.lazy(() => import('../pages/OrdersPage'));
+const CheckoutPage = React.lazy(() => import('../pages/CheckoutPage'));
+const NotFoundPage = React.lazy(() => import('../pages/NotFoundPage'));
 
 // Configuración de rutas de la aplicación
 export const routes: RouteConfig[] = [
