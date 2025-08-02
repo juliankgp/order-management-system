@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrderManagement.Shared.Security.Models;
 using OrderManagement.Shared.Security.Services;
+using OrderManagement.Shared.Security.Extensions;
 using Serilog;
 using System.Reflection;
 using System.Text;
@@ -88,36 +89,8 @@ builder.Services.AddScoped<ICustomerAddressRepository, CustomerAddressRepository
 builder.Services.AddScoped<IPasswordHashingService, PasswordHashingService>();
 builder.Services.AddSingleton<IEventBusService, RabbitMQEventBusService>();
 
-// JWT Configuration
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-builder.Services.AddScoped<IJwtService, JwtService>();
-
-// JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
-if (jwtSettings != null && !string.IsNullOrEmpty(jwtSettings.Key))
-{
-    var key = Encoding.ASCII.GetBytes(jwtSettings.Key);
-    
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false; // Solo para desarrollo
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = jwtSettings.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwtSettings.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-}
-
-builder.Services.AddAuthorization();
+// JWT Authentication (Nueva implementación unificada)
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // CORS
 builder.Services.AddCors(options =>

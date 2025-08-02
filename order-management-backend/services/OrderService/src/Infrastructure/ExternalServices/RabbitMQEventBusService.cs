@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using OrderService.Application.Interfaces;
 using RabbitMQ.Client;
 using System.Text;
 

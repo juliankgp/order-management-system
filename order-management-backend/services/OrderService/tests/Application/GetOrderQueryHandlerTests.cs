@@ -1,7 +1,9 @@
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.Application.DTOs;
+using OrderService.Application.Interfaces;
 using OrderService.Application.Queries.GetOrder;
 using OrderService.Domain.Entities;
 using OrderService.Domain.Repositories;
@@ -12,18 +14,24 @@ namespace OrderService.Tests.Application;
 
 public class GetOrderQueryHandlerTests
 {
-    private readonly Mock<IOrderRepository> _orderRepositoryMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IProductService> _productServiceMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ILogger<GetOrderQueryHandler>> _loggerMock;
     private readonly GetOrderQueryHandler _handler;
 
     public GetOrderQueryHandlerTests()
     {
-        _orderRepositoryMock = new Mock<IOrderRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _productServiceMock = new Mock<IProductService>();
         _mapperMock = new Mock<IMapper>();
+        _loggerMock = new Mock<ILogger<GetOrderQueryHandler>>();
 
         _handler = new GetOrderQueryHandler(
-            _orderRepositoryMock.Object,
-            _mapperMock.Object);
+            _unitOfWorkMock.Object,
+            _productServiceMock.Object,
+            _mapperMock.Object,
+            _loggerMock.Object);
     }
 
     [Fact]
@@ -33,88 +41,111 @@ public class GetOrderQueryHandlerTests
         var orderId = Guid.NewGuid();
         var customerId = Guid.NewGuid();
         var productId = Guid.NewGuid();
+        
         var query = new GetOrderQuery(orderId);
 
-        var order = new Order
+        var existingOrder = new Order
         {
             Id = orderId,
             CustomerId = customerId,
+            OrderNumber = "ORD-001",
             Status = OrderStatus.Pending,
-            Notes = "Test order",
-            CreatedAt = DateTime.UtcNow,
-            OrderItems = new List<OrderItem>
+            TotalAmount = 50.00m,
+            OrderDate = DateTime.UtcNow.AddDays(-1),
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>
             {
                 new OrderItem
                 {
                     Id = Guid.NewGuid(),
                     ProductId = productId,
+                    ProductName = "Test Product",
+                    ProductSku = "TEST-001",
                     Quantity = 2,
-                    UnitPrice = 15.00m
+                    UnitPrice = 25.00m,
+                    TotalPrice = 50.00m
                 }
             }
         };
 
-        var orderDto = new OrderDto
+        var expectedOrderDto = new OrderDto
         {
             Id = orderId,
             CustomerId = customerId,
+            OrderNumber = "ORD-001",
             Status = "Pending",
-            Notes = "Test order",
-            TotalAmount = 30.00m,
-            CreatedAt = order.CreatedAt,
+            TotalAmount = 50.00m,
+            OrderDate = existingOrder.OrderDate,
             Items = new List<OrderItemDto>
             {
                 new OrderItemDto
                 {
-                    Id = order.OrderItems.First().Id,
+                    Id = existingOrder.Items.First().Id,
                     ProductId = productId,
+                    ProductName = "Test Product",
                     Quantity = 2,
-                    UnitPrice = 15.00m,
-                    Subtotal = 30.00m
+                    UnitPrice = 25.00m,
+                    Subtotal = 50.00m
                 }
             }
         };
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
-            .ReturnsAsync(order);
+        var products = new List<ProductResponseDto>
+        {
+            new ProductResponseDto
+            {
+                Id = productId,
+                Name = "Test Product",
+                Price = 25.00m
+            }
+        };
 
-        _mapperMock.Setup(x => x.Map<OrderDto>(order))
-            .Returns(orderDto);
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingOrder);
+
+        _productServiceMock.Setup(x => x.GetProductsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(products);
+
+        _mapperMock.Setup(x => x.Map<OrderDto>(existingOrder))
+            .Returns(expectedOrderDto);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Id.Should().Be(orderId);
+        result!.Id.Should().Be(orderId);
         result.CustomerId.Should().Be(customerId);
+        result.OrderNumber.Should().Be("ORD-001");
         result.Status.Should().Be("Pending");
-        result.TotalAmount.Should().Be(30.00m);
+        result.TotalAmount.Should().Be(50.00m);
         result.Items.Should().HaveCount(1);
         result.Items.First().ProductId.Should().Be(productId);
-        result.Items.First().Quantity.Should().Be(2);
-        result.Items.First().Subtotal.Should().Be(30.00m);
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _mapperMock.Verify(x => x.Map<OrderDto>(order), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _mapperMock.Verify(x => x.Map<OrderDto>(existingOrder), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_OrderNotFound_ShouldThrowNotFoundException()
+    public async Task Handle_OrderNotFound_ShouldReturnNull()
     {
         // Arrange
         var orderId = Guid.NewGuid();
         var query = new GetOrderQuery(orderId);
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        // Act & Assert
-        await _handler.Invoking(x => x.Handle(query, CancellationToken.None))
-            .Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"Order with ID {orderId} not found");
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
+        // Assert
+        result.Should().BeNull();
+
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
         _mapperMock.Verify(x => x.Map<OrderDto>(It.IsAny<Order>()), Times.Never);
     }
 
@@ -124,81 +155,132 @@ public class GetOrderQueryHandlerTests
         // Arrange
         var orderId = Guid.NewGuid();
         var customerId = Guid.NewGuid();
-        var product1Id = Guid.NewGuid();
-        var product2Id = Guid.NewGuid();
+        var productId1 = Guid.NewGuid();
+        var productId2 = Guid.NewGuid();
+        
         var query = new GetOrderQuery(orderId);
 
-        var order = new Order
+        var existingOrder = new Order
         {
             Id = orderId,
             CustomerId = customerId,
+            OrderNumber = "ORD-002",
             Status = OrderStatus.Processing,
-            Notes = "Multi-item order",
-            CreatedAt = DateTime.UtcNow,
-            OrderItems = new List<OrderItem>
+            TotalAmount = 150.00m,
+            OrderDate = DateTime.UtcNow.AddHours(-2),
+            ShippingAddress = "456 Another St",
+            ShippingCity = "Another City",
+            ShippingZipCode = "54321",
+            ShippingCountry = "Another Country",
+            Items = new List<OrderItem>
             {
                 new OrderItem
                 {
                     Id = Guid.NewGuid(),
-                    ProductId = product1Id,
-                    Quantity = 1,
-                    UnitPrice = 10.00m
+                    ProductId = productId1,
+                    ProductName = "Product 1",
+                    ProductSku = "PROD-001",
+                    Quantity = 2,
+                    UnitPrice = 25.00m,
+                    TotalPrice = 50.00m
                 },
                 new OrderItem
                 {
                     Id = Guid.NewGuid(),
-                    ProductId = product2Id,
-                    Quantity = 3,
-                    UnitPrice = 20.00m
+                    ProductId = productId2,
+                    ProductName = "Product 2",
+                    ProductSku = "PROD-002",
+                    Quantity = 1,
+                    UnitPrice = 100.00m,
+                    TotalPrice = 100.00m
                 }
             }
         };
 
-        var orderDto = new OrderDto
+        var expectedOrderDto = new OrderDto
         {
             Id = orderId,
             CustomerId = customerId,
+            OrderNumber = "ORD-002",
             Status = "Processing",
-            Notes = "Multi-item order",
-            TotalAmount = 70.00m,
-            CreatedAt = order.CreatedAt,
+            TotalAmount = 150.00m,
+            OrderDate = existingOrder.OrderDate,
             Items = new List<OrderItemDto>
             {
                 new OrderItemDto
                 {
-                    Id = order.OrderItems.First().Id,
-                    ProductId = product1Id,
-                    Quantity = 1,
-                    UnitPrice = 10.00m,
-                    Subtotal = 10.00m
+                    Id = existingOrder.Items.First().Id,
+                    ProductId = productId1,
+                    ProductName = "Product 1",
+                    Quantity = 2,
+                    UnitPrice = 25.00m,
+                    Subtotal = 50.00m
                 },
                 new OrderItemDto
                 {
-                    Id = order.OrderItems.Last().Id,
-                    ProductId = product2Id,
-                    Quantity = 3,
-                    UnitPrice = 20.00m,
-                    Subtotal = 60.00m
+                    Id = existingOrder.Items.Last().Id,
+                    ProductId = productId2,
+                    ProductName = "Product 2",
+                    Quantity = 1,
+                    UnitPrice = 100.00m,
+                    Subtotal = 100.00m
                 }
             }
         };
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
-            .ReturnsAsync(order);
+        var products = new List<ProductResponseDto>
+        {
+            new ProductResponseDto
+            {
+                Id = productId1,
+                Name = "Product 1",
+                Price = 25.00m
+            },
+            new ProductResponseDto
+            {
+                Id = productId2,
+                Name = "Product 2",
+                Price = 100.00m
+            }
+        };
 
-        _mapperMock.Setup(x => x.Map<OrderDto>(order))
-            .Returns(orderDto);
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingOrder);
+
+        _productServiceMock.Setup(x => x.GetProductsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(products);
+
+        _mapperMock.Setup(x => x.Map<OrderDto>(existingOrder))
+            .Returns(expectedOrderDto);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Items.Should().HaveCount(2);
-        result.TotalAmount.Should().Be(70.00m);
+        result!.Id.Should().Be(orderId);
         result.Status.Should().Be("Processing");
+        result.TotalAmount.Should().Be(150.00m);
+        result.Items.Should().HaveCount(2);
+        result.Items.Sum(x => x.Subtotal).Should().Be(150.00m);
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _mapperMock.Verify(x => x.Map<OrderDto>(order), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _mapperMock.Verify(x => x.Map<OrderDto>(existingOrder), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_EmptyGuid_ShouldReturnNull()
+    {
+        // Arrange
+        var query = new GetOrderQuery(Guid.Empty);
+
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(Guid.Empty, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order?)null);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().BeNull();
     }
 }

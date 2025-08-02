@@ -5,12 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrderManagement.Shared.Security.Models;
 using OrderManagement.Shared.Security.Services;
+using OrderManagement.Shared.Security.Extensions;
 using OrderService.Application.Mappings;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Repositories;
 using OrderService.Infrastructure.Data;
 using OrderService.Infrastructure.ExternalServices;
 using OrderService.Infrastructure.Repositories;
+using OrderService.Api.Middleware;
 using Serilog;
 using System.Reflection;
 using System.Text;
@@ -82,15 +84,17 @@ builder.Services.AddAutoMapper(typeof(OrderMappingProfile));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// External Services
-builder.Services.AddHttpClient<OrderService.Application.Interfaces.IProductService, ProductService>(client =>
+// External Services con JWT automático
+builder.Services.AddHttpContextAccessor(); // Necesario para acceder al HttpContext en el DelegatingHandler
+
+builder.Services.AddHttpClientWithJwt<OrderService.Application.Interfaces.IProductService, ProductService>(client =>
 {
     var baseUrl = builder.Configuration["ExternalServices:ProductService:BaseUrl"] ?? "http://localhost:5002";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-builder.Services.AddHttpClient<OrderService.Application.Interfaces.ICustomerService, CustomerService>(client =>
+builder.Services.AddHttpClientWithJwt<OrderService.Application.Interfaces.ICustomerService, CustomerService>(client =>
 {
     var baseUrl = builder.Configuration["ExternalServices:CustomerService:BaseUrl"] ?? "http://localhost:5003";
     client.BaseAddress = new Uri(baseUrl);
@@ -100,36 +104,8 @@ builder.Services.AddHttpClient<OrderService.Application.Interfaces.ICustomerServ
 // Event Bus Service
 builder.Services.AddSingleton<OrderService.Application.Interfaces.IEventBusService, RabbitMQEventBusService>();
 
-// JWT Configuration
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-builder.Services.AddScoped<IJwtService, JwtService>();
-
-// JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
-if (jwtSettings != null && !string.IsNullOrEmpty(jwtSettings.Key))
-{
-    var key = Encoding.ASCII.GetBytes(jwtSettings.Key);
-    
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false; // Solo para desarrollo
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = jwtSettings.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwtSettings.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-}
-
-builder.Services.AddAuthorization();
+// JWT Authentication (Nueva implementación unificada)
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // CORS
 builder.Services.AddCors(options =>
@@ -164,6 +140,12 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+// Middleware de debug JWT (solo para desarrollo)
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<JwtDebugMiddleware>();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

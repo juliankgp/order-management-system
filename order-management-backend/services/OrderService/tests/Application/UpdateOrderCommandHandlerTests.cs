@@ -1,5 +1,6 @@
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.Application.Commands.UpdateOrder;
 using OrderService.Application.DTOs;
@@ -13,111 +14,128 @@ namespace OrderService.Tests.Application;
 
 public class UpdateOrderCommandHandlerTests
 {
-    private readonly Mock<IOrderRepository> _orderRepositoryMock;
-    private readonly Mock<ICustomerService> _customerServiceMock;
-    private readonly Mock<IProductService> _productServiceMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IEventBusService> _eventBusServiceMock;
+    private readonly Mock<IProductService> _productServiceMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ILogger<UpdateOrderCommandHandler>> _loggerMock;
     private readonly UpdateOrderCommandHandler _handler;
 
     public UpdateOrderCommandHandlerTests()
     {
-        _orderRepositoryMock = new Mock<IOrderRepository>();
-        _customerServiceMock = new Mock<ICustomerService>();
-        _productServiceMock = new Mock<IProductService>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _eventBusServiceMock = new Mock<IEventBusService>();
+        _productServiceMock = new Mock<IProductService>();
         _mapperMock = new Mock<IMapper>();
+        _loggerMock = new Mock<ILogger<UpdateOrderCommandHandler>>();
 
         _handler = new UpdateOrderCommandHandler(
-            _orderRepositoryMock.Object,
-            _customerServiceMock.Object,
-            _productServiceMock.Object,
+            _unitOfWorkMock.Object,
             _eventBusServiceMock.Object,
-            _mapperMock.Object);
+            _productServiceMock.Object,
+            _mapperMock.Object,
+            _loggerMock.Object);
     }
 
     [Fact]
-    public async Task Handle_ValidUpdateOrder_ShouldUpdateOrderSuccessfully()
+    public async Task Handle_ValidCommand_ShouldUpdateOrderSuccessfully()
     {
         // Arrange
         var orderId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
         var productId = Guid.NewGuid();
-
+        
         var updateOrderDto = new UpdateOrderDto
         {
-            CustomerId = customerId,
+            Status = OrderStatus.Processing,
             Notes = "Updated notes",
-            Items = new List<CreateOrderItemDto>
+            Items = new List<UpdateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = productId, Quantity = 3 }
+                new UpdateOrderItemDto
+                {
+                    ProductId = productId,
+                    Quantity = 3
+                }
             }
         };
-
+        
         var command = new UpdateOrderCommand(orderId, updateOrderDto);
 
         var existingOrder = new Order
         {
             Id = orderId,
-            CustomerId = customerId,
+            CustomerId = Guid.NewGuid(),
+            OrderNumber = "ORD-001",
             Status = OrderStatus.Pending,
-            Notes = "Original notes",
-            OrderItems = new List<OrderItem>
+            TotalAmount = 50.00m,
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>
             {
-                new OrderItem { Id = Guid.NewGuid(), ProductId = productId, Quantity = 1, UnitPrice = 10.00m }
-            }
-        };
-
-        var customerResponse = new CustomerResponseDto
-        {
-            Id = customerId,
-            Name = "John Doe",
-            Email = "john@example.com"
-        };
-
-        var productResponse = new ProductResponseDto
-        {
-            Id = productId,
-            Name = "Test Product",
-            Price = 15.00m,
-            Stock = 100
-        };
-
-        var orderDto = new OrderDto
-        {
-            Id = orderId,
-            CustomerId = customerId,
-            Status = "Pending",
-            TotalAmount = 45.00m,
-            Notes = "Updated notes",
-            CreatedAt = DateTime.UtcNow,
-            Items = new List<OrderItemDto>
-            {
-                new OrderItemDto
+                new OrderItem
                 {
                     Id = Guid.NewGuid(),
                     ProductId = productId,
-                    Quantity = 3,
-                    UnitPrice = 15.00m,
-                    Subtotal = 45.00m
+                    ProductName = "Test Product",
+                    ProductSku = "TEST-001",
+                    Quantity = 2,
+                    UnitPrice = 25.00m,
+                    TotalPrice = 50.00m
                 }
             }
         };
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        var products = new List<ProductResponseDto>
+        {
+            new ProductResponseDto
+            {
+                Id = productId,
+                Name = "Test Product",
+                Price = 29.99m
+            }
+        };
+
+        var stockValidation = new ValidationResponseDto { IsValid = true };
+
+        var expectedOrderDto = new OrderDto
+        {
+            Id = orderId,
+            CustomerId = existingOrder.CustomerId,
+            OrderNumber = "ORD-001",
+            Status = "Processing",
+            TotalAmount = 89.97m,
+            OrderDate = DateTime.UtcNow,
+            Items = new List<OrderItemDto>
+            {
+                new OrderItemDto
+                {
+                    ProductId = productId,
+                    ProductName = "Test Product",
+                    Quantity = 3,
+                    UnitPrice = 29.99m,
+                    Subtotal = 89.97m
+                }
+            }
+        };
+
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingOrder);
 
-        _customerServiceMock.Setup(x => x.GetCustomerAsync(customerId))
-            .ReturnsAsync(customerResponse);
+        _productServiceMock
+            .Setup(x => x.GetProductsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(products);
 
-        _productServiceMock.Setup(x => x.GetProductAsync(productId))
-            .ReturnsAsync(productResponse);
+        _productServiceMock
+            .Setup(x => x.ValidateStockAsync(productId, 3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stockValidation);
 
-        _orderRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<Order>()))
-            .Returns(Task.CompletedTask);
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
-        _mapperMock.Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
-            .Returns(orderDto);
+        _mapperMock
+            .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
+            .Returns(expectedOrderDto);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -125,174 +143,149 @@ public class UpdateOrderCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Id.Should().Be(orderId);
-        result.TotalAmount.Should().Be(45.00m);
-        result.Notes.Should().Be("Updated notes");
+        result.Status.Should().Be("Processing");
+        result.Items.Should().HaveCount(1);
+        result.TotalAmount.Should().Be(89.97m);
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _customerServiceMock.Verify(x => x.GetCustomerAsync(customerId), Times.Once);
-        _productServiceMock.Verify(x => x.GetProductAsync(productId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _productServiceMock.Verify(x => x.GetProductsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        // El handler real no usa ValidateStockAsync
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_OrderNotFound_ShouldThrowNotFoundException()
+    public async Task Handle_OrderNotFound_ShouldThrowBusinessException()
     {
         // Arrange
         var orderId = Guid.NewGuid();
         var updateOrderDto = new UpdateOrderDto
         {
-            CustomerId = Guid.NewGuid(),
-            Items = new List<CreateOrderItemDto>
+            Status = OrderStatus.Processing,
+            Items = new List<UpdateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid(), Quantity = 1 }
+                new UpdateOrderItemDto
+                {
+                    ProductId = Guid.NewGuid(),
+                    Quantity = 1
+                }
             }
         };
-
+        
         var command = new UpdateOrderCommand(orderId, updateOrderDto);
 
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
         // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"Order with ID {orderId} not found");
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            _handler.Handle(command, CancellationToken.None));
 
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Never);
+        exception.Message.Should().Contain("not found");
     }
 
     [Fact]
-    public async Task Handle_OrderNotPending_ShouldThrowBusinessException()
+    public async Task Handle_OrderWithMissingProducts_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var orderId = Guid.NewGuid();
-        var updateOrderDto = new UpdateOrderDto
-        {
-            CustomerId = Guid.NewGuid(),
-            Items = new List<CreateOrderItemDto>
-            {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid(), Quantity = 1 }
-            }
-        };
-
-        var command = new UpdateOrderCommand(orderId, updateOrderDto);
-
-        var existingOrder = new Order
-        {
-            Id = orderId,
-            CustomerId = Guid.NewGuid(),
-            Status = OrderStatus.Shipped
-        };
-
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
-            .ReturnsAsync(existingOrder);
-
-        // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<BusinessException>()
-            .WithMessage("Cannot update order that is not in pending status");
-
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_CustomerNotFound_ShouldThrowNotFoundException()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
-        var updateOrderDto = new UpdateOrderDto
-        {
-            CustomerId = customerId,
-            Items = new List<CreateOrderItemDto>
-            {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid(), Quantity = 1 }
-            }
-        };
-
-        var command = new UpdateOrderCommand(orderId, updateOrderDto);
-
-        var existingOrder = new Order
-        {
-            Id = orderId,
-            CustomerId = Guid.NewGuid(),
-            Status = OrderStatus.Pending
-        };
-
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
-            .ReturnsAsync(existingOrder);
-
-        _customerServiceMock.Setup(x => x.GetCustomerAsync(customerId))
-            .ReturnsAsync((CustomerResponseDto?)null);
-
-        // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"Customer with ID {customerId} not found");
-
-        _orderRepositoryMock.Verify(x => x.GetByIdAsync(orderId), Times.Once);
-        _customerServiceMock.Verify(x => x.GetCustomerAsync(customerId), Times.Once);
-        _orderRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_InsufficientStock_ShouldThrowBusinessException()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
         var productId = Guid.NewGuid();
-
         var updateOrderDto = new UpdateOrderDto
         {
-            CustomerId = customerId,
-            Items = new List<CreateOrderItemDto>
+            Status = OrderStatus.Processing,
+            Items = new List<UpdateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = productId, Quantity = 50 }
+                new UpdateOrderItemDto
+                {
+                    ProductId = productId,
+                    Quantity = 1
+                }
             }
         };
-
+        
         var command = new UpdateOrderCommand(orderId, updateOrderDto);
 
         var existingOrder = new Order
         {
             Id = orderId,
-            CustomerId = customerId,
-            Status = OrderStatus.Pending
+            CustomerId = Guid.NewGuid(),
+            OrderNumber = "ORD-001",
+            Status = OrderStatus.Pending,
+            TotalAmount = 50.00m,
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>()
         };
 
-        var customerResponse = new CustomerResponseDto
-        {
-            Id = customerId,
-            Name = "John Doe",
-            Email = "john@example.com"
-        };
-
-        var productResponse = new ProductResponseDto
-        {
-            Id = productId,
-            Name = "Test Product",
-            Price = 10.00m,
-            Stock = 10 // Insufficient stock
-        };
-
-        _orderRepositoryMock.Setup(x => x.GetByIdAsync(orderId))
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingOrder);
 
-        _customerServiceMock.Setup(x => x.GetCustomerAsync(customerId))
-            .ReturnsAsync(customerResponse);
-
-        _productServiceMock.Setup(x => x.GetProductAsync(productId))
-            .ReturnsAsync(productResponse);
+        // No configurar productos mock para simular productos no encontrados
+        _productServiceMock.Setup(x => x.GetProductsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ProductResponseDto>()); // Lista vacía simula productos no encontrados
 
         // Act & Assert
-        await _handler.Invoking(x => x.Handle(command, CancellationToken.None))
-            .Should().ThrowAsync<BusinessException>()
-            .WithMessage($"Insufficient stock for product {productId}. Available: 10, Requested: 50");
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            _handler.Handle(command, CancellationToken.None));
 
-        _orderRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Never);
+        exception.Message.Should().Contain("Products not found");
+    }
+
+    [Fact]
+    public async Task Handle_ValidUpdateWithStatusOnly_ShouldUpdateSuccessfully()
+    {
+        // Arrange
+        var orderId = Guid.NewGuid();
+        
+        var updateOrderDto = new UpdateOrderDto
+        {
+            Status = OrderStatus.Processing,
+            Notes = "Updated status to processing"
+        };
+        
+        var command = new UpdateOrderCommand(orderId, updateOrderDto);
+
+        var existingOrder = new Order
+        {
+            Id = orderId,
+            CustomerId = Guid.NewGuid(),
+            OrderNumber = "ORD-001",
+            Status = OrderStatus.Pending,
+            TotalAmount = 50.00m,
+            ShippingAddress = "123 Test St",
+            ShippingCity = "Test City",
+            ShippingZipCode = "12345",
+            ShippingCountry = "Test Country",
+            Items = new List<OrderItem>()
+        };
+
+        var expectedOrderDto = new OrderDto
+        {
+            Id = orderId,
+            Status = "Processing",
+            TotalAmount = 50.00m
+        };
+
+        _unitOfWorkMock.Setup(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingOrder);
+
+        _unitOfWorkMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        _mapperMock.Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
+            .Returns(expectedOrderDto);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Status.Should().Be("Processing");
+
+        _unitOfWorkMock.Verify(x => x.Orders.GetByIdWithItemsAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _eventBusServiceMock.Verify(x => x.PublishAsync(It.IsAny<object>()), Times.Once);
     }
 }

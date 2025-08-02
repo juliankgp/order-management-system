@@ -29,6 +29,44 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Test endpoint to verify service is running
+    /// </summary>
+    [HttpGet("test")]
+    [AllowAnonymous]
+    [ProducesResponseType(200)]
+    public ActionResult<string> Test()
+    {
+        return Ok("OrderService is running successfully!");
+    }
+
+    /// <summary>
+    /// JWT configuration debug endpoint
+    /// </summary>
+    [HttpGet("jwt-debug")]
+    [AllowAnonymous]
+    [ProducesResponseType(200)]
+    public ActionResult<object> JwtDebug([FromServices] IConfiguration configuration)
+    {
+        var key = configuration["Jwt:Key"];
+        var issuer = configuration["Jwt:Issuer"];
+        var audience = configuration["Jwt:Audience"];
+        
+        // Generar hash de la clave para verificar consistencia
+        var keyHash = !string.IsNullOrEmpty(key) ? 
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..16] : 
+            "NO_KEY";
+        
+        return Ok(new { 
+            KeyLength = key?.Length ?? 0,
+            KeyExists = !string.IsNullOrEmpty(key),
+            KeyHash = keyHash,
+            Issuer = issuer,
+            Audience = audience,
+            HasFallback = true
+        });
+    }
+
+    /// <summary>
     /// Crea una nueva orden
     /// </summary>
     /// <param name="createOrderDto">Datos de la orden a crear</param>

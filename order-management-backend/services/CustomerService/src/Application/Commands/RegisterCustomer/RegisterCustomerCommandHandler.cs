@@ -10,9 +10,6 @@ using OrderManagement.Shared.Security.Services;
 
 namespace CustomerService.Application.Commands.RegisterCustomer;
 
-/// <summary>
-/// Handler para el comando de registro de cliente
-/// </summary>
 public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCommand, AuthenticatedCustomerDto>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -42,7 +39,6 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
     {
         _logger.LogInformation("Registering new customer with email: {Email}", request.Email);
 
-        // Verificar si el email ya existe
         var existingCustomer = await _unitOfWork.Customers.GetByEmailAsync(request.Email, cancellationToken);
         if (existingCustomer != null)
         {
@@ -50,7 +46,6 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
             throw new InvalidOperationException($"A customer with email {request.Email} already exists.");
         }
 
-        // Crear el cliente
         var customer = new Customer
         {
             Id = Guid.NewGuid(),
@@ -73,7 +68,6 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
 
         _logger.LogInformation("Customer registered successfully with ID: {CustomerId}", customer.Id);
 
-        // Generar JWT token
         var userClaims = new OrderManagement.Shared.Security.Models.UserClaims
         {
             UserId = customer.Id,
@@ -81,14 +75,12 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
             FullName = customer.FullName
         };
         var token = _jwtService.GenerateToken(userClaims);
-        var tokenExpires = DateTime.UtcNow.AddHours(24); // 24 horas por defecto
+        var tokenExpires = DateTime.UtcNow.AddHours(24);
 
-        // Crear el DTO de respuesta
         var authenticatedCustomer = _mapper.Map<AuthenticatedCustomerDto>(customer);
         authenticatedCustomer.Token = token;
         authenticatedCustomer.TokenExpires = tokenExpires;
 
-        // Publicar evento de cliente registrado
         var customerRegisteredEvent = new CustomerRegisteredEvent
         {
             CustomerId = customer.Id,
@@ -99,13 +91,12 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
 
         try
         {
-            await _eventBus.PublishAsync(customerRegisteredEvent, "customers.registered", cancellationToken);
+            await _eventBus.PublishAsync(customerRegisteredEvent, "customer.registered", cancellationToken);
             _logger.LogInformation("CustomerRegisteredEvent published for customer {CustomerId}", customer.Id);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to publish CustomerRegisteredEvent for customer {CustomerId}", customer.Id);
-            // No fallar el registro por problemas de eventos
         }
 
         return authenticatedCustomer;

@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OrderService.Application.DTOs;
-using OrderService.Application.Interfaces;
 using System.Text;
 
 namespace OrderService.Infrastructure.ExternalServices;
@@ -19,7 +18,7 @@ public class ProductService : OrderService.Application.Interfaces.IProductServic
     {
         _httpClient = httpClient;
         _logger = logger;
-        _baseUrl = Environment.GetEnvironmentVariable("PRODUCT_SERVICE_URL") ?? "http://localhost:5002";
+        _baseUrl = Environment.GetEnvironmentVariable("PRODUCT_SERVICE_URL") ?? "https://localhost:5002";
     }
 
     public async Task<ValidationResponseDto> ValidateProductExistsAsync(Guid productId, CancellationToken cancellationToken = default)

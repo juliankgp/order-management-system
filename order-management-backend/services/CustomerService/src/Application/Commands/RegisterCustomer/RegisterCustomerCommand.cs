@@ -4,9 +4,6 @@ using MediatR;
 
 namespace CustomerService.Application.Commands.RegisterCustomer;
 
-/// <summary>
-/// Comando para registrar un nuevo cliente
-/// </summary>
 public record RegisterCustomerCommand(
     string Email,
     string Password,

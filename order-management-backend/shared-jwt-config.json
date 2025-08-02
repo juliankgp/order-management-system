@@ -1,0 +1,8 @@
+{
+  "Jwt": {
+    "Key": "order-management-system-super-secret-jwt-signing-key-that-must-be-at-least-32-characters-long-for-security",
+    "Issuer": "OrderManagementSystem",
+    "Audience": "OrderManagementSystem",
+    "ExpireMinutes": 60
+  }
+}

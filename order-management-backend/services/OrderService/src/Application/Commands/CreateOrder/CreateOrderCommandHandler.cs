@@ -12,7 +12,7 @@ namespace OrderService.Application.Commands.CreateOrder;
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDto>
 {
-    private readonly IOrderRepository _orderRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICustomerService _customerService;
     private readonly IProductService _productService;
     private readonly IEventBusService _eventBusService;
@@ -20,14 +20,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
     private readonly ILogger<CreateOrderCommandHandler> _logger;
 
     public CreateOrderCommandHandler(
-        IOrderRepository orderRepository,
+        IUnitOfWork unitOfWork,
         ICustomerService customerService,
         IProductService productService,
         IEventBusService eventBusService,
         IMapper mapper,
         ILogger<CreateOrderCommandHandler> logger)
     {
-        _orderRepository = orderRepository;
+        _unitOfWork = unitOfWork;
         _customerService = customerService;
         _productService = productService;
         _eventBusService = eventBusService;
@@ -119,8 +119,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         order.ShippingCost = CalculateShipping(order.SubTotal);
         order.TotalAmount = order.SubTotal + order.TaxAmount + order.ShippingCost;
 
-        // Guardar en base de datos
-        await _orderRepository.AddAsync(order);
+        // Guardar en base de datos usando Unit of Work
+        await _unitOfWork.Orders.AddAsync(order);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Order {OrderId} created successfully with total amount {TotalAmount}", 
             order.Id, order.TotalAmount);
@@ -146,13 +147,11 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
     private decimal CalculateTax(decimal subTotal)
     {
-        // Implementar lógica de cálculo de impuestos
         return subTotal * 0.10m; // 10% de impuestos
     }
 
     private decimal CalculateShipping(decimal subTotal)
     {
-        // Implementar lógica de cálculo de envío
         if (subTotal > 100) return 0; // Envío gratis para órdenes mayores a $100
         return 10; // $10 de costo de envío
     }

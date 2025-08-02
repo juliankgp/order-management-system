@@ -16,9 +16,9 @@ dotnet build order-management-backend/OrderManagement.sln
 
 # Run individual services (from order-management-backend directory)
 dotnet run --project services/OrderService/src/Api --urls="https://localhost:5001"
-dotnet run --project services/ProductService/src/Web --urls="https://localhost:5002"
-dotnet run --project services/CustomerService/src/Web --urls="https://localhost:5003"
-dotnet run --project services/LoggingService/src/Web --urls="https://localhost:5004"
+dotnet run --project services/ProductService/src/Api --urls="https://localhost:5002"
+dotnet run --project services/CustomerService/src/Api --urls="https://localhost:5003"
+dotnet run --project services/LoggingService/src/Api --urls="https://localhost:5004"
 
 # Start all services with PowerShell script
 .\infra\scripts\start-services.ps1
@@ -93,10 +93,10 @@ Infrastructure Layer (EF Core, RabbitMQ, External Services)
 ```
 order-management-backend/
 ├── services/
-│   ├── OrderService/src/{Domain,Application,Infrastructure,Api,Web}/
-│   ├── ProductService/src/{Domain,Application,Infrastructure,Web}/
-│   ├── CustomerService/src/{Domain,Application,Infrastructure,Web}/
-│   └── LoggingService/src/{Domain,Application,Infrastructure,Web}/
+│   ├── OrderService/src/{Domain,Application,Infrastructure,Api}/
+│   ├── ProductService/src/{Domain,Application,Infrastructure,Api}/
+│   ├── CustomerService/src/{Domain,Application,Infrastructure,Api}/
+│   └── LoggingService/src/{Domain,Application,Infrastructure,Api}/
 ├── shared/
 │   ├── OrderManagement.Shared.Common/
 │   ├── OrderManagement.Shared.Events/
@@ -138,7 +138,8 @@ CreateOrderCommandHandler, GetOrderQueryHandler
 - **Domain**: `services/{ServiceName}/src/Domain/` - Entities, repository interfaces
 - **Application**: `services/{ServiceName}/src/Application/` - Commands, queries, handlers, DTOs
 - **Infrastructure**: `services/{ServiceName}/src/Infrastructure/` - EF DbContext, repositories, external services
-- **Web/Api**: `services/{ServiceName}/src/{Web|Api}/` - Controllers, Program.cs, configuration
+- **Api**: `services/{ServiceName}/src/Api/` - Controllers, Program.cs, configuration
+  - All services now use consistent `Api` folder structure
 
 ## Database Configuration
 
@@ -182,3 +183,11 @@ When modifying services, always consider:
 5. **Testing**: Add unit tests for handlers and integration tests for APIs
 
 The current state shows many `*_new.cs` files suggesting ongoing refactoring. Use existing patterns and maintain consistency with the established architecture.
+
+## Working Directory Context
+
+The main working directory is the `order-management-backend` folder. All commands should be run from this directory unless otherwise specified. The project uses Git with the current branch being `order-managment-services` and the main branch is `master`.
+
+## Debugging and Launch Configuration
+
+Visual Studio Code launch configurations are available in `.vscode/launch.json` for debugging individual services. Each service has its own launch profile with proper JWT configuration and debug endpoints.
