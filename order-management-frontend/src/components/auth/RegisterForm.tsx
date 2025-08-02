@@ -85,12 +85,9 @@ const RegisterForm: React.FC = () => {
       await register(registerData);
 
       // Si llegamos aquí, el registro fue exitoso
-      console.log('✅ Registro exitoso, redirigiendo a productos');
       navigate('/products', { replace: true });
 
     } catch (error) {
-      console.error('❌ Error en registro:', error);
-      
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Error desconocido durante el registro';

@@ -132,7 +132,6 @@ const setupTokenExpirationTimer = (
 
   // Configurar timer para logout automático
   const timerId = setTimeout(() => {
-    console.warn('🔒 Token expirado - Cerrando sesión automáticamente');
     onExpire();
   }, timeUntilExpiration);
 
@@ -184,7 +183,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const clearTimer = setupTokenExpirationTimer(authResponse.tokenExpires, logout);
     setClearExpirationTimer(() => clearTimer);
 
-    console.log('✅ Sesión establecida exitosamente');
   };
 
   // Función de login
@@ -254,12 +252,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             payload: { user, token }
           });
 
-          console.log('✅ Sesión existente restaurada');
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       } catch (error) {
-        console.error('❌ Error al restaurar sesión:', error);
         clearSession();
         dispatch({ type: 'SET_LOADING', payload: false });
       }

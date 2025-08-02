@@ -132,7 +132,6 @@ const OrdersPage: React.FC = () => {
       loadOrders(filters);
       
       // Show success message (you might want to add a snackbar here)
-      console.log('Order status updated successfully');
     } catch (error) {
       console.error('Error updating order status:', error);
       setError('Failed to update order status. Please try again.');
@@ -281,9 +280,8 @@ const OrdersPage: React.FC = () => {
               key={order.id}
               order={order}
               onStatusUpdate={handleStatusUpdate}
-              onViewDetails={(order) => {
+              onViewDetails={() => {
                 // You might want to navigate to a detailed order view
-                console.log('View order details:', order);
               }}
             />
           ))}

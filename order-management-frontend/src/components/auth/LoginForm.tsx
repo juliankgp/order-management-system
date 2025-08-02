@@ -66,12 +66,9 @@ const LoginForm: React.FC = () => {
       await login(data);
 
       // If we reach here, login was successful
-      console.log('✅ Login successful, redirecting to:', from);
       navigate(from, { replace: true });
 
     } catch (error) {
-      console.error('❌ Login error:', error);
-      
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Unknown error during login';

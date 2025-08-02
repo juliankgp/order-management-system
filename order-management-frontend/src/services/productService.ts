@@ -44,14 +44,14 @@ class ProductService {
     const url = `${API_ENDPOINTS.PRODUCTS.GET_ALL}?${searchParams.toString()}`;
     
     const response = await productApiClient.get<ApiResponse<PagedResponse<ProductDto>>>(url);
-    return response.data.data;
+    return response.data;
   }
 
   async getProduct(id: string): Promise<ProductDto> {
     const response = await productApiClient.get<ApiResponse<ProductDto>>(
       API_ENDPOINTS.PRODUCTS.GET_BY_ID.replace(':id', id)
     );
-    return response.data.data;
+    return response.data;
   }
 
   async getProductsBatch(ids: string[]): Promise<ProductDto[]> {
@@ -59,7 +59,7 @@ class ProductService {
       API_ENDPOINTS.PRODUCTS.GET_BATCH,
       { productIds: ids }
     );
-    return response.data.data;
+    return response.data;
   }
 
   async validateStock(request: ValidateStockRequest): Promise<ValidateStockResponse> {
@@ -67,7 +67,7 @@ class ProductService {
       API_ENDPOINTS.PRODUCTS.VALIDATE_STOCK,
       request
     );
-    return response.data.data;
+    return response.data;
   }
 
   async searchProducts(query: string, limit: number = 10): Promise<ProductDto[]> {

@@ -106,7 +106,6 @@ const ProductsPage: React.FC = () => {
 
   const handleAddToCart = (product: ProductDto, quantity: number) => {
     // TODO: Implement cart functionality in Phase 4
-    console.log('Add to cart:', product.name, 'quantity:', quantity);
     alert(`Added ${quantity} ${product.name} to cart!`);
   };
 

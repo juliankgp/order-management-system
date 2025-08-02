@@ -1,5 +1,14 @@
-import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG, HTTP_STATUS } from '../constants/api';
+
+// Custom Axios instance type that returns data directly (due to response interceptor)
+interface CustomAxiosInstance {
+  get<T = unknown>(url: string, config?: any): Promise<T>;
+  post<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
+  put<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
+  patch<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
+  delete<T = unknown>(url: string, config?: any): Promise<T>;
+}
 
 // Interfaz para respuesta estándar de API
 export interface ApiResponse<T = unknown> {
@@ -22,7 +31,7 @@ export interface PagedResponse<T = unknown> {
 }
 
 // Crear instancia de cliente API con configuración base
-const createApiClient = (baseURL: string): AxiosInstance => {
+const createApiClient = (baseURL: string): CustomAxiosInstance => {
   const client = axios.create({
     baseURL,
     timeout: API_CONFIG.TIMEOUT,
@@ -129,7 +138,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
     }
   );
 
-  return client;
+  return client as CustomAxiosInstance;
 };
 
 // Instancias de clientes para cada microservicio
