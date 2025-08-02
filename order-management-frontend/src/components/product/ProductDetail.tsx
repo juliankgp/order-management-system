@@ -43,7 +43,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   if (!product) return null;
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= product.stockQuantity) {
+    if (newQuantity >= 1 && newQuantity <= product.stock) {
       setQuantity(newQuantity);
     }
   };
@@ -55,9 +55,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   };
 
-  const isOutOfStock = product.stockQuantity === 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 10;
-  const maxQuantity = Math.min(product.stockQuantity, 99);
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
+  const maxQuantity = Math.min(product.stock, 99);
 
   return (
     <Dialog
@@ -175,7 +175,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
               <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                 <Typography variant="body1">
-                  <strong>Stock:</strong> {product.stockQuantity} units
+                  <strong>Stock:</strong> {product.stock} units
                 </Typography>
                 <Typography variant="body1">
                   <strong>SKU:</strong> {product.sku || 'N/A'}
@@ -207,9 +207,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   </Typography>
                 )}
 
-                {(product.length || product.width || product.height) && (
+                {product.dimensions && (
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    <strong>Dimensions:</strong> {product.length || 0} × {product.width || 0} × {product.height || 0} cm
+                    <strong>Dimensions:</strong> {product.dimensions}
                   </Typography>
                 )}
 

@@ -38,7 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleIncreaseQuantity = () => {
-    if (cartQuantity < product.stockQuantity) {
+    if (cartQuantity < product.stock) {
       updateQuantity(product.id, cartQuantity + 1);
     }
   };
@@ -55,8 +55,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const isOutOfStock = product.stockQuantity === 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 10;
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
 
   return (
     <Card
@@ -231,7 +231,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               ${product.price.toFixed(2)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Stock: {product.stockQuantity}
+              Stock: {product.stock}
             </Typography>
           </Box>
 
@@ -261,7 +261,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <IconButton
                 size="small"
                 onClick={handleIncreaseQuantity}
-                disabled={cartQuantity >= product.stockQuantity}
+                disabled={cartQuantity >= product.stock}
               >
                 <AddIcon />
               </IconButton>

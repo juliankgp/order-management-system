@@ -70,14 +70,12 @@ export interface ProductDto {
   description?: string;
   sku: string;
   price: number;
-  stockQuantity: number;
+  stock: number;
   minimumStock: number;
   category?: string;
   brand?: string;
   weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
+  dimensions?: string;
   imageUrl?: string;
   isActive: boolean;
   tags?: string;

@@ -280,8 +280,9 @@ const OrdersPage: React.FC = () => {
               key={order.id}
               order={order}
               onStatusUpdate={handleStatusUpdate}
-              onViewDetails={() => {
-                // You might want to navigate to a detailed order view
+              onViewDetails={(order) => {
+                // For now, expand order details in place
+                alert(`Order Details:\n\nOrder Number: ${order.orderNumber}\nStatus: ${order.status === 1 ? 'Pending' : order.status === 2 ? 'Completed' : 'Cancelled'}\nTotal: $${order.totalAmount.toFixed(2)}\nItems: ${order.items?.length || 0}\nDate: ${new Date(order.orderDate).toLocaleDateString()}\nNotes: ${order.notes || 'None'}`);
               }}
             />
           ))}

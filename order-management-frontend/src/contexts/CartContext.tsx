@@ -218,8 +218,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    if (product.stockQuantity < quantity) {
-      dispatch({ type: 'SET_ERROR', payload: `Only ${product.stockQuantity} items available in stock` });
+    if (product.stock < quantity) {
+      dispatch({ type: 'SET_ERROR', payload: `Only ${product.stock} items available in stock` });
       return;
     }
     
@@ -238,8 +238,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Find the product in cart to check stock
     const cartItem = state.cart.items.find(item => item.product.id === productId);
-    if (cartItem && quantity > cartItem.product.stockQuantity) {
-      dispatch({ type: 'SET_ERROR', payload: `Only ${cartItem.product.stockQuantity} items available in stock` });
+    if (cartItem && quantity > cartItem.product.stock) {
+      dispatch({ type: 'SET_ERROR', payload: `Only ${cartItem.product.stock} items available in stock` });
       return;
     }
     
