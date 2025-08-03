@@ -18,7 +18,7 @@ public class RabbitMQEventBusService : OrderService.Application.Interfaces.IEven
     public RabbitMQEventBusService(ILogger<RabbitMQEventBusService> logger)
     {
         _logger = logger;
-        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "order_management_exchange";
+        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "orders";
 
         try
         {
@@ -105,9 +105,9 @@ public class RabbitMQEventBusService : OrderService.Application.Interfaces.IEven
         // Convertir nombres de eventos a routing keys
         return eventType switch
         {
-            "OrderCreatedEvent" => "orders.created",
-            "OrderStatusUpdatedEvent" => "orders.status.updated",
-            "OrderDeletedEvent" => "orders.deleted",
+            "OrderCreatedEvent" => "order.created",
+            "OrderStatusUpdatedEvent" => "order.status.updated",
+            "OrderDeletedEvent" => "order.deleted",
             _ => $"orders.{eventType.ToLowerInvariant()}"
         };
     }

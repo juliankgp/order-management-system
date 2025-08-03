@@ -19,7 +19,7 @@ public class RabbitMQEventBusService : IEventBusService, IDisposable
     public RabbitMQEventBusService(ILogger<RabbitMQEventBusService> logger)
     {
         _logger = logger;
-        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "order_management_exchange";
+        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "products";
 
         try
         {

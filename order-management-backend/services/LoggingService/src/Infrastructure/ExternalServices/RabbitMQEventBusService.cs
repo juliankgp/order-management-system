@@ -86,16 +86,16 @@ public class RabbitMQEventBusService : BackgroundService
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
 
-            // Declarar exchanges
-            _channel.ExchangeDeclare("orders", ExchangeType.Topic, true);
-            _channel.ExchangeDeclare("customers", ExchangeType.Topic, true);
-            _channel.ExchangeDeclare("products", ExchangeType.Topic, true);
+            // Declarar exchanges (basado en lo que realmente usan los servicios)
+            _channel.ExchangeDeclare("orders", ExchangeType.Topic, true);     // OrderService
+            _channel.ExchangeDeclare("customers", ExchangeType.Topic, true);  // CustomerService
+            _channel.ExchangeDeclare("products", ExchangeType.Topic, true);   // ProductService
 
             // Crear cola para el servicio de logging
             var queueName = "logging.events";
             _channel.QueueDeclare(queueName, true, false, false, null);
 
-            // Bind a todos los eventos
+            // Bind a todos los eventos (usando exchanges consistentes)
             _channel.QueueBind(queueName, "orders", "order.created");
             _channel.QueueBind(queueName, "orders", "order.status.updated");
             _channel.QueueBind(queueName, "customers", "customer.registered");

@@ -29,7 +29,7 @@ public class OrderEventConsumer : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "order_management_exchange";
+        _exchangeName = Environment.GetEnvironmentVariable("RABBITMQ_EXCHANGE") ?? "orders";
         _queueName = "product_service_queue";
 
         try
