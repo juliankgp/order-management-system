@@ -38,9 +38,9 @@ export const CartItem: React.FC<CartItemProps> = ({ item, compact = false }) => 
     removeItem(product.id);
   };
 
-  const isOutOfStock = product.stockQuantity === 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity < 10;
-  const maxQuantity = Math.min(product.stockQuantity, 99);
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock < 10;
+  const maxQuantity = Math.min(product.stock, 99);
 
   if (compact) {
     return (
@@ -114,7 +114,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item, compact = false }) => 
               
               {isLowStock && !isOutOfStock && (
                 <Chip
-                  label={`Only ${product.stockQuantity} left`}
+                  label={`Only ${product.stock} left`}
                   color="warning"
                   size="small"
                 />

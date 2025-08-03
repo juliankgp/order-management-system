@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { productService } from './productService';
-import { ProductDto } from '../types/entities';
+import { type ProductDto } from '../types/entities';
 
 // Mock de axios
 vi.mock('axios', () => ({
@@ -29,7 +29,7 @@ describe('ProductService', () => {
         data: {
           items: [],
           totalCount: 0,
-          pageNumber: 1,
+          currentPage: 1,
           pageSize: 10
         }
       };
@@ -51,7 +51,7 @@ describe('ProductService', () => {
         name: 'Test Product',
         description: 'Test Description',
         price: 100,
-        stockQuantity: 10,
+        stock: 10,
         sku: 'TEST-001',
         category: 'Test',
         isActive: true,
@@ -73,7 +73,7 @@ describe('ProductService', () => {
       const spy = vi.spyOn(productService, 'getProducts').mockResolvedValue({
         items: [],
         totalCount: 0,
-        pageNumber: 1,
+        currentPage: 1,
         pageSize: 10
       });
 
@@ -89,7 +89,7 @@ describe('ProductService', () => {
       const spy = vi.spyOn(productService, 'getProducts').mockResolvedValue({
         items: [],
         totalCount: 0,
-        pageNumber: 1,
+        currentPage: 1,
         pageSize: 10
       });
 
