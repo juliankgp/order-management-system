@@ -2,7 +2,6 @@ import { productApiClient } from './apiClient';
 import { API_ENDPOINTS } from '../constants/api';
 import type { 
   ProductDto, 
-  ApiResponse, 
   PagedResponse
 } from '../types';
 
@@ -43,31 +42,31 @@ class ProductService {
 
     const url = `${API_ENDPOINTS.PRODUCTS.GET_ALL}?${searchParams.toString()}`;
     
-    const response = await productApiClient.get<ApiResponse<PagedResponse<ProductDto>>>(url);
-    return response.data;
+    const response = await productApiClient.get<PagedResponse<ProductDto>>(url);
+    return response;
   }
 
   async getProduct(id: string): Promise<ProductDto> {
-    const response = await productApiClient.get<ApiResponse<ProductDto>>(
+    const response = await productApiClient.get<ProductDto>(
       API_ENDPOINTS.PRODUCTS.GET_BY_ID.replace(':id', id)
     );
-    return response.data;
+    return response;
   }
 
   async getProductsBatch(ids: string[]): Promise<ProductDto[]> {
-    const response = await productApiClient.post<ApiResponse<ProductDto[]>>(
+    const response = await productApiClient.post<ProductDto[]>(
       API_ENDPOINTS.PRODUCTS.GET_BATCH,
       { productIds: ids }
     );
-    return response.data;
+    return response;
   }
 
   async validateStock(request: ValidateStockRequest): Promise<ValidateStockResponse> {
-    const response = await productApiClient.post<ApiResponse<ValidateStockResponse>>(
+    const response = await productApiClient.post<ValidateStockResponse>(
       API_ENDPOINTS.PRODUCTS.VALIDATE_STOCK,
       request
     );
-    return response.data;
+    return response;
   }
 
   async searchProducts(query: string, limit: number = 10): Promise<ProductDto[]> {

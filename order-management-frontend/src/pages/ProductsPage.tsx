@@ -16,7 +16,7 @@ const ProductsPage: React.FC = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
 
-  const getFiltersFromUrl = (): ProductFilter => {
+  const getFiltersFromUrl = useCallback((): ProductFilter => {
     return {
       search: searchParams.get('search') || '',
       category: searchParams.get('category') || '',
@@ -25,11 +25,11 @@ const ProductsPage: React.FC = () => {
       maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
       inStock: searchParams.get('inStock') ? searchParams.get('inStock') === 'true' : undefined,
     };
-  };
+  }, [searchParams]);
 
-  const getCurrentPage = (): number => {
+  const getCurrentPage = useCallback((): number => {
     return Number(searchParams.get('page')) || 1;
-  };
+  }, [searchParams]);
 
   const updateUrlParams = (filters: ProductFilter, page: number = 1) => {
     const params = new URLSearchParams();
@@ -62,13 +62,15 @@ const ProductsPage: React.FC = () => {
       setProducts(result);
 
       // Extract unique categories for filter dropdown
-      const uniqueCategories = Array.from(
-        new Set(result.items.map((p: ProductDto) => p.category).filter(Boolean))
-      ).sort() as string[];
-      setCategories(prev => {
-        const combined = Array.from(new Set([...prev, ...uniqueCategories])).sort();
-        return combined;
-      });
+      if (result && result.items) {
+        const uniqueCategories = Array.from(
+          new Set(result.items.map((p: ProductDto) => p.category).filter(Boolean))
+        ).sort() as string[];
+        setCategories(prev => {
+          const combined = Array.from(new Set([...prev, ...uniqueCategories])).sort();
+          return combined;
+        });
+      }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
@@ -83,7 +85,7 @@ const ProductsPage: React.FC = () => {
     const filters = getFiltersFromUrl();
     const page = getCurrentPage();
     loadProducts(filters, page);
-  }, [loadProducts, searchParams]);
+  }, [loadProducts, getFiltersFromUrl, getCurrentPage]);
 
   const handleFiltersChange = (newFilters: ProductFilter) => {
     updateUrlParams(newFilters, 1);

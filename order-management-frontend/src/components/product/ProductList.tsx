@@ -74,7 +74,7 @@ const ProductList: React.FC<ProductListProps> = ({
     );
   }
 
-  if (!products || products.items.length === 0) {
+  if (!products || !products.items || products.items.length === 0) {
     return (
       <Box
         sx={{
