@@ -1,4 +1,5 @@
 import { BaseService } from './baseService';
+import { serviceConfig } from '../config/serviceConfig';
 import type {
   OrderDto,
   CreateOrderDto,
@@ -23,7 +24,7 @@ export class OrderService extends BaseService {
   };
 
   constructor() {
-    super('https://localhost:5001'); // OrderService port
+    super(serviceConfig.orderService); // Usa configuración dinámica
   }
 
   // Get all orders with optional filtering and pagination

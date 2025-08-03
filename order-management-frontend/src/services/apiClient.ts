@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG, HTTP_STATUS } from '../constants/api';
+import { serviceConfig } from '../config/serviceConfig';
 
 // Custom Axios instance type that returns data directly (due to response interceptor)
 interface CustomAxiosInstance {
@@ -142,10 +143,10 @@ const createApiClient = (baseURL: string): CustomAxiosInstance => {
 };
 
 // Instancias de clientes para cada microservicio
-export const customerApiClient = createApiClient('https://localhost:5003');
-export const orderApiClient = createApiClient('https://localhost:5001');
-export const productApiClient = createApiClient('https://localhost:5002');
-export const loggingApiClient = createApiClient('https://localhost:5004');
+export const customerApiClient = createApiClient(serviceConfig.customerService);
+export const orderApiClient = createApiClient(serviceConfig.orderService);
+export const productApiClient = createApiClient(serviceConfig.productService);
+export const loggingApiClient = createApiClient(serviceConfig.loggingService);
 
 // Cliente genérico para casos especiales
 export const genericApiClient = createApiClient('');

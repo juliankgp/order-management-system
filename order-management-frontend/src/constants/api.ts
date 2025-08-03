@@ -1,9 +1,11 @@
-// API Base URLs para cada microservicio
+import { serviceConfig } from '../config/serviceConfig';
+
+// API Base URLs para cada microservicio (dinámicas basadas en configuración)
 export const API_BASE_URLS = {
-  CUSTOMER_SERVICE: 'https://localhost:5003',
-  ORDER_SERVICE: 'https://localhost:5001', 
-  PRODUCT_SERVICE: 'https://localhost:5002',
-  LOGGING_SERVICE: 'https://localhost:5004'
+  CUSTOMER_SERVICE: serviceConfig.customerService,
+  ORDER_SERVICE: serviceConfig.orderService, 
+  PRODUCT_SERVICE: serviceConfig.productService,
+  LOGGING_SERVICE: serviceConfig.loggingService
 } as const;
 
 // Endpoints de API organizados por servicio

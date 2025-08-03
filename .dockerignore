@@ -1,0 +1,86 @@
+# ===== DOCKERIGNORE PARA ORDER MANAGEMENT SYSTEM =====
+# Excluye archivos innecesarios para optimizar el contexto de build
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+DOCKER_README.md
+*.md
+docs/
+.vscode/
+.vs/
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/build/
+**/dist/
+**/target/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+.yarn/
+
+# .NET
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+[Dd]ebug/
+[Rr]elease/
+packages/
+TestResults/
+
+# IDE files
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Testing
+coverage/
+test-results/
+.nyc_output/
+playwright-report/
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Scripts (pero mantener algunos importantes)
+scripts/local-*
+*.ps1
+*.sh

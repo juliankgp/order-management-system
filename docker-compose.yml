@@ -1,0 +1,326 @@
+# ===== DOCKER COMPOSE MAESTRO - ORDER MANAGEMENT SYSTEM =====
+# Comando único: docker-compose up -d
+# Incluye: Backend (4 microservicios) + Frontend + Infraestructura
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # INFRAESTRUCTURA
+  # ==========================================
+  
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oms-sqlserver
+    hostname: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=OrderManagement2024!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    networks:
+      - oms-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P OrderManagement2024! -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: oms-rabbitmq
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=OrderManagement2024!
+      - RABBITMQ_DEFAULT_VHOST=/
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - oms-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # MICROSERVICIOS BACKEND
+  # ==========================================
+
+  # Customer Service - Autenticación y gestión de clientes
+  customer-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/CustomerService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Release
+    container_name: oms-customer-service
+    hostname: customer-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5003
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Customers;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - RabbitMQ__Port=5672
+      - RabbitMQ__VirtualHost=/
+      - RabbitMQ__Exchange=order_management_exchange
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+      - Jwt__ExpireMinutes=60
+      - Serilog__MinimumLevel=Information
+    ports:
+      - "5003:5003"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - oms-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/customer-service:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Product Service - Gestión de productos e inventario
+  product-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/ProductService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Release
+    container_name: oms-product-service
+    hostname: product-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5002
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Products;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - RabbitMQ__VirtualHost=/
+      - RabbitMQ__Exchange=order_management_exchange
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+      - Jwt__ExpireMinutes=60
+      - Serilog__MinimumLevel=Information
+    ports:
+      - "5002:5002"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - oms-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/product-service:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Order Service - Gestión de órdenes
+  order-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/OrderService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Release
+    container_name: oms-order-service
+    hostname: order-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Orders;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - RabbitMQ__Port=5672
+      - RabbitMQ__VirtualHost=/
+      - RabbitMQ__Exchange=order_management_exchange
+      - ExternalServices__ProductService__BaseUrl=http://product-service:5002
+      - ExternalServices__CustomerService__BaseUrl=http://customer-service:5003
+      - ExternalServices__LoggingService__BaseUrl=http://logging-service:5004
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+      - Jwt__ExpireMinutes=60
+      - Serilog__MinimumLevel=Information
+    ports:
+      - "5001:5001"
+    depends_on:
+      customer-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    networks:
+      - oms-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/order-service:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Logging Service - Centralización de logs
+  logging-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/LoggingService/Dockerfile
+      args:
+        - BUILD_CONFIGURATION=Release
+    container_name: oms-logging-service
+    hostname: logging-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5004
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Logs;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - RabbitMQ__Port=5672
+      - RabbitMQ__VirtualHost=/
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+      - Jwt__ExpireMinutes=60
+      - Serilog__MinimumLevel=Information
+    ports:
+      - "5004:5004"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - oms-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/logging-service:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================
+  # FRONTEND
+  # ==========================================
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./order-management-frontend
+      dockerfile: Dockerfile.dev
+    container_name: oms-frontend
+    hostname: frontend
+    environment:
+      # Modo Docker activado
+      - VITE_DOCKER_MODE=true
+      # URLs internas del container para comunicación entre servicios
+      - VITE_ORDER_SERVICE_URL=http://order-service:5001
+      - VITE_PRODUCT_SERVICE_URL=http://product-service:5002
+      - VITE_CUSTOMER_SERVICE_URL=http://customer-service:5003
+      - VITE_LOGGING_SERVICE_URL=http://logging-service:5004
+      # URLs externas para el navegador (localhost)
+      - VITE_ORDER_SERVICE_EXTERNAL_URL=http://localhost:5001
+      - VITE_PRODUCT_SERVICE_EXTERNAL_URL=http://localhost:5002
+      - VITE_CUSTOMER_SERVICE_EXTERNAL_URL=http://localhost:5003
+      - VITE_LOGGING_SERVICE_EXTERNAL_URL=http://localhost:5004
+    ports:
+      - "3000:5173"  # Puerto 3000 para el navegador -> 5173 interno de Vite
+    depends_on:
+      order-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      customer-service:
+        condition: service_healthy
+      logging-service:
+        condition: service_healthy
+    networks:
+      - oms-network
+    restart: unless-stopped
+    volumes:
+      - ./order-management-frontend/src:/app/src:ro  # Solo para desarrollo, mount del código fuente
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==========================================
+  # UTILIDADES Y MONITORING
+  # ==========================================
+
+  # Nginx Reverse Proxy (opcional pero recomendado para producción)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: oms-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - order-service
+      - product-service
+      - customer-service
+      - logging-service
+    networks:
+      - oms-network
+    restart: unless-stopped
+
+# ==========================================
+# VOLUMES PERSISTENTES
+# ==========================================
+volumes:
+  sqlserver_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# ==========================================
+# REDES
+# ==========================================
+networks:
+  oms-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

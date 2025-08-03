@@ -1,8 +1,39 @@
-# Order Management System
+# Order Management System 🚀
 
-Sistema de gestión de órdenes basado en arquitectura de microservicios con .NET 8.
+Un sistema completo de gestión de pedidos dockerizado, construido con .NET 8 y React + TypeScript.
 
-## 🏗️ Arquitectura General
+# Order Management System 🚀
+
+Un sistema completo de gestión de pedidos dockerizado, construido con .NET 8 y React + TypeScript.
+
+## ⚡ Inicio Rápido
+
+### 🐳 Con Docker (Recomendado para Demo)
+**¡Ejecuta todo el sistema con un solo comando!**
+
+```bash
+bash start-oms.sh
+```
+
+### 🏠 Desarrollo Local (Recomendado para Desarrollo)
+**¡Desarrollo rápido con hot reload!**
+
+```bash
+bash start-local.sh
+```
+
+### 🔗 URLs del Sistema
+
+| Servicio | Docker | Local | Swagger |
+|----------|--------|-------|---------|
+| **Frontend** | http://localhost:3000 | http://localhost:3000 | - |
+| **Order Service** | http://localhost:5001 | http://localhost:5001 | /swagger |
+| **Product Service** | http://localhost:5002 | http://localhost:5002 | /swagger |
+| **Customer Service** | http://localhost:5003 | http://localhost:5003 | /swagger |
+| **Logging Service** | http://localhost:5004 | http://localhost:5004 | /swagger |
+| **RabbitMQ Management** | http://localhost:15672 | http://localhost:15672 | guest/guest |
+
+## 🏗️ Arquitectura de Microservicios
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -41,7 +72,38 @@ Sistema de gestión de órdenes basado en arquitectura de microservicios con .NE
               └─────────────────────┘
 ```
 
-## 📋 Características del Sistema
+## � Guías de Inicio
+
+### 🐳 [Docker Deployment](DOCKER_DEPLOYMENT.md)
+**Para demos, testing y producción**
+- Un solo comando para iniciar todo
+- Aislamiento completo de dependencias
+- Configuración de producción lista
+
+### 🏠 [Local Development](LOCAL_DEVELOPMENT.md)  
+**Para desarrollo activo y debugging**
+- Hot reload para desarrollo rápido
+- Debugging completo de .NET y React
+- Menor uso de recursos del sistema
+
+### ⚡ Comandos Rápidos
+
+```bash
+# 🐳 Docker: Todo el stack completo
+bash start-oms.sh                 # Iniciar con Docker
+bash test-integration.sh          # Probar el sistema
+
+# 🏠 Local: Desarrollo rápido  
+bash start-local.sh               # Iniciar localmente
+bash check-local.sh               # Verificar servicios
+bash stop-local.sh                # Detener servicios
+
+# 📊 Verificación de estado
+bash check-local.sh --quick       # Verificación rápida
+docker ps                         # Ver contenedores Docker
+```
+
+## �📋 Características del Sistema
 
 ### 🔧 Backend (Microservicios .NET 8)
 - **OrderService**: Gestión de órdenes y transacciones
@@ -59,14 +121,6 @@ Sistema de gestión de órdenes basado en arquitectura de microservicios con .NE
 - **Serilog** - Logging estructurado
 - **xUnit** - Testing unitario
 - **Docker** - Containerización
-
-## 🚀 Inicio Rápido
-
-### Prerrequisitos
-- .NET 8 SDK
-- Node.js 18+
-- SQL Server (LocalDB o completo)
-- RabbitMQ
 - Docker Desktop (opcional)
 
 ### Opción 1: Configuración Manual
@@ -93,13 +147,44 @@ dotnet run --project services/CustomerService/src/Web --urls="https://localhost:
 dotnet run --project services/LoggingService/src/Web --urls="https://localhost:5004"
 ```
 
-### Opción 2: Docker Compose
+### Opción 2: Docker Compose (TODO EL SISTEMA - UN SOLO COMANDO) 🚀
 
 ```bash
-# Desde la raíz del proyecto backend
+# NUEVO: Dockerización completa - Backend + Frontend + Infraestructura
+# Un solo comando para levantar todo el sistema
+
+# Windows (PowerShell) - RECOMENDADO
+.\start-system.ps1
+
+# Linux/Mac/WSL (Bash)
+./start-system.sh
+
+# O directamente con Docker Compose
+docker-compose up -d
+
+# Ver todo funcionando:
+# Frontend: http://localhost:3000
+# APIs: http://localhost:500X/swagger
+# RabbitMQ: http://localhost:15672
+```
+
+**🎉 NUEVO: Sistema Completamente Dockerizado**
+- ✅ Backend (4 microservicios)
+- ✅ Frontend React
+- ✅ SQL Server + RabbitMQ
+- ✅ Un solo comando para todo
+- ✅ Health checks automáticos
+- ✅ Hot reload en desarrollo
+
+Ver documentación completa: [DOCKER_README.md](DOCKER_README.md)
+
+### Opción 3: Docker Compose Backend (Original)
+
+```bash
+# Solo backend (método original)
 cd order-management-backend
 
-# Ejecutar toda la infraestructura
+# Ejecutar toda la infraestructura backend
 docker-compose -f infra/docker/docker-compose.yml up -d
 
 # Ver logs
