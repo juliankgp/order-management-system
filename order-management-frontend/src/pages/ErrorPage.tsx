@@ -36,7 +36,7 @@ interface ErrorPageProps {
 
 const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError }) => {
   const navigate = useNavigate();
-  const routeError = useRouteError() as any;
+  const routeError = useRouteError() as { message?: string; status?: number; statusText?: string };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -219,7 +219,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError }) => {
         {/* Action Buttons */}
         <Grid container spacing={2} justifyContent="center">
           {config.actions.map((action, index) => (
-            <Grid item xs={12} sm="auto" key={index}>
+            <Grid size={{ xs: 12, sm: "auto" }} key={index}>
               <Button
                 variant={index === 0 ? 'contained' : 'outlined'}
                 size="large"

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
 import { type AuthResponse, type LoginCustomerDto, type RegisterCustomerDto, type User } from '../types';
 
@@ -255,7 +256,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
-      } catch (error) {
+      } catch {
         clearSession();
         dispatch({ type: 'SET_LOADING', payload: false });
       }

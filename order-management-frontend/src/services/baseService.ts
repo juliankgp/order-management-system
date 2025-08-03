@@ -44,12 +44,12 @@ export abstract class BaseService {
     return response.data;
   }
 
-  protected async post<T>(url: string, data?: any): Promise<T> {
+  protected async post<T>(url: string, data?: unknown): Promise<T> {
     const response: AxiosResponse<T> = await this.apiClient.post(url, data);
     return response.data;
   }
 
-  protected async put<T>(url: string, data?: any): Promise<T> {
+  protected async put<T>(url: string, data?: unknown): Promise<T> {
     const response: AxiosResponse<T> = await this.apiClient.put(url, data);
     return response.data;
   }
@@ -59,7 +59,7 @@ export abstract class BaseService {
     return response.data;
   }
 
-  protected async patch<T>(url: string, data?: any): Promise<T> {
+  protected async patch<T>(url: string, data?: unknown): Promise<T> {
     const response: AxiosResponse<T> = await this.apiClient.patch(url, data);
     return response.data;
   }

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { 
   Snackbar, 
@@ -70,6 +71,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         hideNotification(id);
       }, newNotification.duration);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxNotifications, defaultDuration]);
 
   const hideNotification = useCallback((id?: string) => {
@@ -161,7 +163,7 @@ export const useApiErrorHandler = () => {
   const { showError } = useNotifications();
 
   return useCallback((error: unknown, defaultMessage = 'An unexpected error occurred') => {
-    const err = error as any;
+    const err = error as { response?: { data?: { message?: string } }; message?: string };
     if (err?.response?.data?.message) {
       showError(err.response.data.message);
     } else if (err?.message) {

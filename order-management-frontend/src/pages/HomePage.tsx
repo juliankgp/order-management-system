@@ -99,7 +99,7 @@ const HomePage: React.FC = () => {
             }}
           />
           
-          <GradientTitle variant="h1" component="h1" gutterBottom>
+          <GradientTitle variant="h1" gutterBottom>
             OrderFlow Pro
           </GradientTitle>
           
@@ -113,7 +113,7 @@ const HomePage: React.FC = () => {
           {isAuthenticated && (
             <Grid container spacing={3} justifyContent="center" mb={4}>
               {stats.map((stat, index) => (
-                <Grid item xs={6} sm={3} key={index}>
+                <Grid size={{ xs: 6, sm: 3 }} key={index}>
                   <StatsCard elevation={2}>
                     <Box sx={{ color: theme.palette.primary.main, mb: 1 }}>
                       {stat.icon}
@@ -166,7 +166,7 @@ const HomePage: React.FC = () => {
         
         <Grid container spacing={4} justifyContent="center">
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
               <FeatureCard>
                 <FeatureIconContainer sx={{ background: feature.gradient }}>
                   <FeatureIconCircle>
@@ -225,7 +225,7 @@ const HomePage: React.FC = () => {
           </Box>
           
           <Grid container spacing={6} alignItems="center" justifyContent="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                 {benefits.map((benefit, index) => (
                   <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: { xs: 'center', md: 'flex-start' } }}>
@@ -240,7 +240,7 @@ const HomePage: React.FC = () => {
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', justifyContent: 'center' }}>
               <FeatureCard>
                 <FeatureIconContainer sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                   <FeatureIconCircle>

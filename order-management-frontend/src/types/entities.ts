@@ -206,6 +206,12 @@ export interface User {
   email: string;
   fullName: string;
   emailVerified: boolean;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  createdAt?: string;
 }
 
 export interface CartItem {

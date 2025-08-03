@@ -8,7 +8,7 @@ import type {
 } from '../types/entities';
 import { OrderStatus } from '../types/entities';
 
-interface GetOrdersParams extends OrderFilters {}
+type GetOrdersParams = OrderFilters;
 
 export class OrderService extends BaseService {
   private static readonly ENDPOINTS = {

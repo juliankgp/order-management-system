@@ -82,7 +82,7 @@ const NotFoundPage: React.FC = () => {
 
         {/* Action Buttons */}
         <Grid container spacing={2} justifyContent="center">
-          <Grid item xs={12} sm="auto">
+          <Grid size={{ xs: 12, sm: "auto" }}>
             <Button
               variant="contained"
               size="large"
@@ -95,7 +95,7 @@ const NotFoundPage: React.FC = () => {
             </Button>
           </Grid>
           
-          <Grid item xs={12} sm="auto">
+          <Grid size={{ xs: 12, sm: "auto" }}>
             <Button
               variant="outlined"
               size="large"
@@ -108,7 +108,7 @@ const NotFoundPage: React.FC = () => {
             </Button>
           </Grid>
           
-          <Grid item xs={12} sm="auto">
+          <Grid size={{ xs: 12, sm: "auto" }}>
             <Button
               variant="text"
               size="large"

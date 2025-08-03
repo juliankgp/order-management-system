@@ -129,15 +129,11 @@ class AuthService {
    * @returns Promise con datos del perfil
    */
   async getProfile(): Promise<AuthResponse> {
-    try {
-      const authData = await customerApiClient.get<AuthResponse>(
-        API_ENDPOINTS.CUSTOMERS.PROFILE
-      );
+    const authData = await customerApiClient.get<AuthResponse>(
+      API_ENDPOINTS.CUSTOMERS.PROFILE
+    );
 
-      return authData;
-    } catch (error) {
-      throw error;
-    }
+    return authData;
   }
 
   /**
@@ -146,16 +142,12 @@ class AuthService {
    * @returns Promise con datos actualizados
    */
   async updateProfile(profileData: Partial<RegisterCustomerDto>): Promise<AuthResponse> {
-    try {
-      const authData = await customerApiClient.put<AuthResponse>(
-        API_ENDPOINTS.CUSTOMERS.PROFILE,
-        profileData
-      );
+    const authData = await customerApiClient.put<AuthResponse>(
+      API_ENDPOINTS.CUSTOMERS.PROFILE,
+      profileData
+    );
 
-      return authData;
-    } catch (error) {
-      throw error;
-    }
+    return authData;
   }
 
   /**

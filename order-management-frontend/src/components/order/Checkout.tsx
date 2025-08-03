@@ -19,7 +19,7 @@ import {
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../services/orderService';
-import type { CreateOrderDto } from '../../types/entities';
+import type { CreateOrderDto, Cart, CartItem as CartItemType } from '../../types/entities';
 import { CartSummary } from '../cart/CartSummary';
 import { CartItem } from '../cart/CartItem';
 
@@ -188,7 +188,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onBack, onComplete }) => {
 // Step Components
 
 interface ReviewOrderStepProps {
-  cart: any;
+  cart: Cart;
   orderNotes: string;
   setOrderNotes: (notes: string) => void;
 }
@@ -208,7 +208,7 @@ const ReviewOrderStep: React.FC<ReviewOrderStepProps> = ({ cart, orderNotes, set
         <Box>
           {/* Order Items */}
           <Box sx={{ mb: 3 }}>
-            {cart.items.map((item: any) => (
+            {cart.items.map((item: CartItemType) => (
               <CartItem key={item.product.id} item={item} compact />
             ))}
           </Box>
@@ -248,7 +248,7 @@ const ReviewOrderStep: React.FC<ReviewOrderStepProps> = ({ cart, orderNotes, set
 };
 
 interface PaymentStepProps {
-  cart: any;
+  cart: Cart;
   loading: boolean;
 }
 

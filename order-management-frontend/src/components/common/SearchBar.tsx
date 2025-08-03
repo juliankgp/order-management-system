@@ -82,7 +82,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Load search history from localStorage
   useEffect(() => {
@@ -217,7 +217,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           items.push(
             <ListItem
               key={suggestion.id}
-              button
+              component="button"
               onClick={() => handleSuggestionClick(suggestion)}
             >
               <ListItemIcon>
@@ -252,7 +252,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         items.push(
           <ListItem
             key={`history-${index}`}
-            button
+            component="button"
             onClick={() => handleHistoryClick(historyItem)}
           >
             <ListItemIcon>

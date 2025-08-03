@@ -22,7 +22,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { OrderDto, OrderFilters, PagedResponse } from '../types/entities';
 import { OrderStatus } from '../types/entities';
 import { orderService } from '../services/orderService';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext'; // Keep for future use
 import { OrderCard } from '../components/order/OrderCard';
 
 const OrdersPage: React.FC = () => {
@@ -34,10 +34,10 @@ const OrdersPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const {} = useAuth(); // Keep for future use
-
+  // const {} = useAuth(); // Keep for future use - commented to avoid empty pattern
+  
   // Get filters from URL
-  const getFiltersFromUrl = (): OrderFilters => {
+  const getFiltersFromUrl = useCallback((): OrderFilters => {
     return {
       page: parseInt(searchParams.get('page') || '1'),
       pageSize: parseInt(searchParams.get('pageSize') || '10'),
@@ -47,7 +47,7 @@ const OrdersPage: React.FC = () => {
       toDate: searchParams.get('toDate') || undefined,
       orderNumber: searchParams.get('orderNumber') || undefined
     };
-  };
+  }, [searchParams]);
 
   // Update URL with filters
   const updateUrlWithFilters = (newFilters: Partial<OrderFilters>) => {
@@ -104,10 +104,10 @@ const OrdersPage: React.FC = () => {
   useEffect(() => {
     const filters = getFiltersFromUrl();
     loadOrders(filters);
-  }, [searchParams, loadOrders]);
+  }, [searchParams, loadOrders, getFiltersFromUrl]);
 
   // Handle filter changes
-  const handleFilterChange = (filterName: keyof OrderFilters, value: any) => {
+  const handleFilterChange = (filterName: keyof OrderFilters, value: unknown) => {
     updateUrlWithFilters({ [filterName]: value, page: 1 }); // Reset to page 1 when filtering
   };
 

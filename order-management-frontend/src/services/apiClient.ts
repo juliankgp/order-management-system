@@ -3,11 +3,11 @@ import { API_CONFIG, HTTP_STATUS } from '../constants/api';
 
 // Custom Axios instance type that returns data directly (due to response interceptor)
 interface CustomAxiosInstance {
-  get<T = unknown>(url: string, config?: any): Promise<T>;
-  post<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
-  put<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
-  patch<T = unknown>(url: string, data?: any, config?: any): Promise<T>;
-  delete<T = unknown>(url: string, config?: any): Promise<T>;
+  get<T = unknown>(url: string, config?: object): Promise<T>;
+  post<T = unknown>(url: string, data?: unknown, config?: object): Promise<T>;
+  put<T = unknown>(url: string, data?: unknown, config?: object): Promise<T>;
+  patch<T = unknown>(url: string, data?: unknown, config?: object): Promise<T>;
+  delete<T = unknown>(url: string, config?: object): Promise<T>;
 }
 
 // Interfaz para respuesta estándar de API

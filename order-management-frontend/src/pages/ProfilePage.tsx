@@ -26,7 +26,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  type SelectChangeEvent
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -51,7 +52,7 @@ interface ProfileFormData {
   lastName: string;
   phoneNumber: string;
   dateOfBirth: string;
-  gender: Gender;
+  gender: Gender | null;
 }
 
 interface PasswordFormData {
@@ -75,7 +76,7 @@ const ProfilePage: React.FC = () => {
     lastName: user?.lastName || '',
     phoneNumber: user?.phoneNumber || '',
     dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
-    gender: user?.gender || 'NotSpecified'
+    gender: user?.gender || null
   });
 
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
@@ -85,11 +86,19 @@ const ProfilePage: React.FC = () => {
   });
 
   const handleProfileChange = (field: keyof ProfileFormData) => (
-    event: React.ChangeEvent<HTMLInputElement | { value: unknown }>
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setProfileData(prev => ({
       ...prev,
       [field]: event.target.value
+    }));
+  };
+
+  const handleGenderChange = (event: SelectChangeEvent<Gender | null>) => {
+    const value = event.target.value;
+    setProfileData(prev => ({
+      ...prev,
+      gender: value === '' ? null : value as Gender
     }));
   };
 
@@ -113,7 +122,7 @@ const ProfilePage: React.FC = () => {
       
       setEditMode(false);
       showSuccess('Profile updated successfully');
-    } catch (error) {
+    } catch {
       showError('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
@@ -127,7 +136,7 @@ const ProfilePage: React.FC = () => {
       lastName: user?.lastName || '',
       phoneNumber: user?.phoneNumber || '',
       dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
-      gender: user?.gender || 'NotSpecified'
+      gender: user?.gender || null
     });
     setEditMode(false);
   };
@@ -154,7 +163,7 @@ const ProfilePage: React.FC = () => {
       setPasswordDialogOpen(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       showSuccess('Password changed successfully');
-    } catch (error) {
+    } catch {
       showError('Failed to change password. Please verify your current password.');
     } finally {
       setLoading(false);
@@ -178,7 +187,7 @@ const ProfilePage: React.FC = () => {
         
         showSuccess('Account deleted successfully');
         // Redirect handled by logout
-      } catch (error) {
+      } catch {
         showError('Failed to delete account. Please try again.');
       } finally {
         setLoading(false);
@@ -186,11 +195,12 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const getGenderLabel = (gender: Gender) => {
+  const getGenderLabel = (gender: Gender | null) => {
     switch (gender) {
-      case 'Male': return 'Male';
-      case 'Female': return 'Female';
-      case 'Other': return 'Other';
+      case Gender.Male: return 'Male';
+      case Gender.Female: return 'Female';
+      case Gender.Other: return 'Other';
+      case Gender.PreferNotToSay: return 'Prefer not to say';
       default: return 'Not Specified';
     }
   };
@@ -219,7 +229,7 @@ const ProfilePage: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Profile Information Card */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Card>
             <CardHeader
               avatar={
@@ -251,7 +261,7 @@ const ProfilePage: React.FC = () => {
               {editMode ? (
                 <Box component="form" sx={{ '& .MuiTextField-root': { mb: 2 } }}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="First Name"
@@ -260,7 +270,7 @@ const ProfilePage: React.FC = () => {
                         required
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Last Name"
@@ -269,7 +279,7 @@ const ProfilePage: React.FC = () => {
                         required
                       />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <TextField
                         fullWidth
                         label="Email"
@@ -279,7 +289,7 @@ const ProfilePage: React.FC = () => {
                         required
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Phone Number"
@@ -287,7 +297,7 @@ const ProfilePage: React.FC = () => {
                         onChange={handleProfileChange('phoneNumber')}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Date of Birth"
@@ -297,18 +307,18 @@ const ProfilePage: React.FC = () => {
                         InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth>
                         <InputLabel>Gender</InputLabel>
                         <Select
-                          value={profileData.gender}
+                          value={profileData.gender || ''}
                           label="Gender"
-                          onChange={handleProfileChange('gender')}
+                          onChange={handleGenderChange}
                         >
-                          <MenuItem value="Male">Male</MenuItem>
-                          <MenuItem value="Female">Female</MenuItem>
-                          <MenuItem value="Other">Other</MenuItem>
-                          <MenuItem value="NotSpecified">Prefer not to say</MenuItem>
+                          <MenuItem value={Gender.Male}>Male</MenuItem>
+                          <MenuItem value={Gender.Female}>Female</MenuItem>
+                          <MenuItem value={Gender.Other}>Other</MenuItem>
+                          <MenuItem value={Gender.PreferNotToSay}>Prefer not to say</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
@@ -360,7 +370,7 @@ const ProfilePage: React.FC = () => {
                     <ListItemIcon><GenderIcon /></ListItemIcon>
                     <ListItemText 
                       primary="Gender" 
-                      secondary={getGenderLabel(user.gender || 'NotSpecified')}
+                      secondary={getGenderLabel(user.gender || null)}
                     />
                   </ListItem>
                 </List>
@@ -370,7 +380,7 @@ const ProfilePage: React.FC = () => {
         </Grid>
 
         {/* Security Settings Card */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Card>
             <CardHeader
               title="Security Settings"

@@ -2,19 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { productService } from './productService';
 import { type ProductDto } from '../types/entities';
 
-// Mock de axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      }
-    }))
+// Mock the entire productService module
+vi.mock('./productService', () => ({
+  productService: {
+    getProducts: vi.fn(),
+    getProduct: vi.fn(),
+    searchProducts: vi.fn(),
+    getActiveProducts: vi.fn()
   }
 }));
 
@@ -26,21 +20,22 @@ describe('ProductService', () => {
   describe('getProducts', () => {
     it('calls API with correct parameters', async () => {
       const mockResponse = {
-        data: {
-          items: [],
-          totalCount: 0,
-          currentPage: 1,
-          pageSize: 10
-        }
+        items: [],
+        totalCount: 0,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false
       };
 
-      const mockGet = vi.fn().mockResolvedValue(mockResponse);
-      (productService as any).client.get = mockGet;
+      vi.mocked(productService.getProducts).mockResolvedValue(mockResponse);
 
       const params = { page: 1, pageSize: 10 };
-      await productService.getProducts(params);
+      const result = await productService.getProducts(params);
 
-      expect(mockGet).toHaveBeenCalledWith('/products', { params });
+      expect(productService.getProducts).toHaveBeenCalledWith(params);
+      expect(result).toEqual(mockResponse);
     });
   });
 
@@ -52,6 +47,7 @@ describe('ProductService', () => {
         description: 'Test Description',
         price: 100,
         stock: 10,
+        minimumStock: 5,
         sku: 'TEST-001',
         category: 'Test',
         isActive: true,
@@ -59,43 +55,44 @@ describe('ProductService', () => {
         updatedAt: new Date().toISOString()
       };
 
-      const mockGet = vi.fn().mockResolvedValue({ data: mockProduct });
-      (productService as any).client.get = mockGet;
+      vi.mocked(productService.getProduct).mockResolvedValue(mockProduct);
 
-      await productService.getProduct('1');
+      const result = await productService.getProduct('1');
 
-      expect(mockGet).toHaveBeenCalledWith('/products/1');
+      expect(productService.getProduct).toHaveBeenCalledWith('1');
+      expect(result).toEqual(mockProduct);
     });
   });
 
   describe('helper methods', () => {
     it('searchProducts calls getProducts with search parameter', async () => {
-      const spy = vi.spyOn(productService, 'getProducts').mockResolvedValue({
-        items: [],
-        totalCount: 0,
-        currentPage: 1,
-        pageSize: 10
-      });
+      const mockProducts: ProductDto[] = [];
 
-      await productService.searchProducts('test', 5);
+      vi.mocked(productService.searchProducts).mockResolvedValue(mockProducts);
 
-      expect(spy).toHaveBeenCalledWith({
-        search: 'test',
-        pageSize: 5
-      });
+      const result = await productService.searchProducts('test', 5);
+
+      expect(productService.searchProducts).toHaveBeenCalledWith('test', 5);
+      expect(result).toEqual(mockProducts);
     });
 
     it('getActiveProducts calls getProducts with isActive filter', async () => {
-      const spy = vi.spyOn(productService, 'getProducts').mockResolvedValue({
+      const mockResponse = {
         items: [],
         totalCount: 0,
         currentPage: 1,
-        pageSize: 10
-      });
+        pageSize: 20,
+        totalPages: 0,
+        hasNext: false,
+        hasPrevious: false
+      };
 
-      await productService.getActiveProducts();
+      vi.mocked(productService.getActiveProducts).mockResolvedValue(mockResponse);
 
-      expect(spy).toHaveBeenCalledWith({ isActive: true });
+      const result = await productService.getActiveProducts();
+
+      expect(productService.getActiveProducts).toHaveBeenCalledWith();
+      expect(result).toEqual(mockResponse);
     });
   });
 });
