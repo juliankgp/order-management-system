@@ -1,34 +1,34 @@
 # 🏠 Local Development Guide
 
-Esta guía explica cómo ejecutar el Order Management System localmente para desarrollo, sin usar Docker.
+This guide explains how to run the Order Management System locally for development, without using Docker.
 
-## 📋 Prerrequisitos
+## 📋 Prerequisites
 
-### Requerimientos del Sistema
-- **Windows 10/11** con WSL o Git Bash
-- **.NET 8.0 SDK** - [Descargar aquí](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **Node.js 18+** y **npm** - [Descargar aquí](https://nodejs.org/)
-- **SQL Server** (Local DB, Express, o Developer Edition)
-- **RabbitMQ** (puede ejecutarse en Docker)
+### System Requirements
+- **Windows 10/11** with WSL or Git Bash
+- **.NET 8.0 SDK** - [Download here](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **Node.js 18+** and **npm** - [Download here](https://nodejs.org/)
+- **SQL Server** (Local DB, Express, or Developer Edition)
+- **RabbitMQ** (can run in Docker)
 
-### Verificar Instalaciones
+### Verify Installations
 ```bash
-# Verificar .NET
+# Verify .NET
 dotnet --version
 
-# Verificar Node.js
+# Verify Node.js
 node --version
 npm --version
 
-# Verificar SQL Server
+# Verify SQL Server
 sqlcmd -S localhost -Q "SELECT GETDATE()"
 ```
 
-## 🚀 Inicio Rápido
+## 🚀 Quick Start
 
-### 1. Iniciar Infraestructura Externa
+### 1. Start External Infrastructure
 
-**SQL Server** (si no está instalado localmente):
+**SQL Server** (if not installed locally):
 ```bash
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
   -p 1433:1433 --name sql-server \
@@ -42,53 +42,50 @@ docker run -d --name rabbitmq \
   rabbitmq:3-management
 ```
 
-### 2. Iniciar Todo el Sistema
+### 2. Start the Complete System
 ```bash
-# Hacer el script ejecutable
-chmod +x start-local.sh
-
-# Iniciar todos los servicios
-bash start-local.sh
+# Start all services
+bash scripts/local/start-local.sh
 ```
 
-### 3. Verificar el Sistema
+### 3. Verify the System
 ```bash
-# Verificación completa
-bash check-local.sh
+# Complete verification
+bash scripts/local/check-local.sh
 
-# Verificación rápida
-bash check-local.sh --quick
+# Quick verification
+bash scripts/local/check-local.sh --quick
 ```
 
-### 4. Detener el Sistema
+### 4. Stop the System
 ```bash
-# Detener servicios ordenadamente
-bash stop-local.sh
+# Stop services gracefully
+bash scripts/local/stop-local.sh
 
-# Detener forzadamente si hay problemas
-bash stop-local.sh --force
+# Force stop if there are issues
+bash scripts/local/stop-local.sh --force
 ```
 
-## 🔧 Configuración Manual
+## 🔧 Manual Configuration
 
 ### Backend Services
 
-Cada servicio se puede iniciar individualmente:
+Each service can be started individually:
 
 ```bash
-# Customer Service (Puerto 5003)
+# Customer Service (Port 5003)
 cd order-management-backend/services/CustomerService/src/Api
 dotnet run --urls="http://localhost:5003"
 
-# Product Service (Puerto 5002)
+# Product Service (Port 5002)
 cd order-management-backend/services/ProductService/src/Api
 dotnet run --urls="http://localhost:5002"
 
-# Logging Service (Puerto 5004)
+# Logging Service (Port 5004)
 cd order-management-backend/services/LoggingService/src/Api
 dotnet run --urls="http://localhost:5004"
 
-# Order Service (Puerto 5001) - Iniciar al final
+# Order Service (Port 5001) - Start last
 cd order-management-backend/services/OrderService/src/Api
 dotnet run --urls="http://localhost:5001"
 ```
@@ -98,20 +95,20 @@ dotnet run --urls="http://localhost:5001"
 ```bash
 cd order-management-frontend
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Configurar variables de entorno para local
+# Configure environment variables for local development
 cp .env.example .env.local
 
-# Iniciar servidor de desarrollo
+# Start development server
 npm run dev
 ```
 
-## 🌐 URLs de Desarrollo
+## 🌐 Development URLs
 
-| Servicio | URL | Swagger |
-|----------|-----|---------|
+| Service | URL | Swagger |
+|---------|-----|---------|
 | **Frontend** | http://localhost:3000 | - |
 | **Order Service** | http://localhost:5001 | http://localhost:5001/swagger |
 | **Product Service** | http://localhost:5002 | http://localhost:5002/swagger |
@@ -119,165 +116,280 @@ npm run dev
 | **Logging Service** | http://localhost:5004 | http://localhost:5004/swagger |
 | **RabbitMQ Management** | http://localhost:15672 | guest/guest |
 
-## 📁 Estructura de Archivos
+## 📁 File Structure
 
 ```
 order-management-system/
-├── start-local.sh          # 🚀 Iniciar todo localmente
-├── stop-local.sh           # 🛑 Detener servicios locales
-├── check-local.sh          # 🔍 Verificar estado del sistema
-├── logs/                   # 📋 Logs de servicios locales
+├── start-local.sh          # 🚀 Start everything locally
+├── stop-local.sh           # 🛑 Stop local services
+├── check-local.sh          # 🔍 Verify system status
+├── logs/                   # 📋 Local service logs
 │   ├── customerservice.log
 │   ├── productservice.log
 │   ├── orderservice.log
 │   ├── loggingservice.log
 │   └── frontend.log
 └── order-management-frontend/
-    └── .env.example        # 🔧 Configuración de ejemplo
+    └── .env.example        # 🔧 Example configuration
 ```
 
-## 🛠️ Comandos Útiles
+## 🛠️ Useful Commands
 
-### Ver Logs en Tiempo Real
+### View Real-time Logs
 ```bash
-# Ver logs de un servicio específico
+# View logs for a specific service
 tail -f logs/customerservice.log
 tail -f logs/productservice.log
 tail -f logs/orderservice.log
 tail -f logs/loggingservice.log
 tail -f logs/frontend.log
 
-# Ver todos los logs
+# View all logs
 tail -f logs/*.log
 ```
 
-### Reiniciar Servicios
+### Restart Services
 ```bash
-# Reiniciar todo el sistema
-bash stop-local.sh && bash start-local.sh
+# Restart entire system
+bash scripts/local/stop-local.sh && bash scripts/local/start-local.sh
 
-# Reiniciar solo un servicio (ejemplo: Customer Service)
-# 1. Encontrar PID
+# Restart specific service (example: Customer Service)
+# 1. Find PID
 cat logs/customerservice.pid
 
-# 2. Detener servicio
+# 2. Stop service
 kill <PID>
 
-# 3. Reiniciar
+# 3. Restart
 cd order-management-backend/services/CustomerService/src/Api
 dotnet run --urls="http://localhost:5003" > ../../../../logs/customerservice.log 2>&1 &
 ```
 
-### Tests
+### Testing
 ```bash
 # Frontend tests
 cd order-management-frontend
 npm test
 
-# Backend tests (ejemplo)
+# Backend tests (example)
 cd order-management-backend/services/CustomerService
 dotnet test
 ```
 
-## ⚡ Desarrollo Rápido
+## ⚡ Rapid Development
 
 ### Hot Reload
-- **Frontend**: Vite proporciona hot reload automático
-- **Backend**: Los cambios requieren reiniciar el servicio
+- **Frontend**: Vite provides automatic hot reload
+- **Backend**: Changes require service restart
 
 ### Debugging
-- **Frontend**: Usa las DevTools del navegador
-- **Backend**: Adjunta el debugger de VS Code o usa `dotnet run --launch-profile Debug`
+- **Frontend**: Use browser DevTools
+- **Backend**: Attach VS Code debugger or use `dotnet run --launch-profile Debug`
 
-### Base de Datos
+### Database
 ```bash
-# Conectar a SQL Server
+# Connect to SQL Server
 sqlcmd -S localhost -U sa -P YourStrong@Passw0rd
 
-# Ver bases de datos
+# View databases
 SELECT name FROM sys.databases;
 
-# Usar base de datos específica
+# Use specific database
 USE OrderManagement_Customers;
 ```
 
 ## 🐛 Troubleshooting
 
-### Problemas Comunes
+### Common Issues
 
-**Puerto ya en uso:**
+**Port already in use:**
 ```bash
-# Encontrar proceso usando el puerto
+# Find process using the port
 netstat -ano | findstr :5001
 
-# Terminar proceso
+# Terminate process
 taskkill /PID <PID> /F
 ```
 
-**SQL Server no conecta:**
+**SQL Server not connecting:**
 ```bash
-# Verificar si SQL Server está corriendo
+# Check if SQL Server is running
 sc query MSSQLSERVER
 
-# Iniciar SQL Server
+# Start SQL Server
 net start MSSQLSERVER
 ```
 
-**RabbitMQ no conecta:**
+**RabbitMQ not connecting:**
 ```bash
-# Verificar Docker container
+# Check Docker container
 docker ps | grep rabbitmq
 
-# Reiniciar RabbitMQ
+# Restart RabbitMQ
 docker restart rabbitmq
 ```
 
-**Dependencias de npm:**
+**npm dependencies:**
 ```bash
-# Limpiar cache y reinstalar
+# Clear cache and reinstall
 cd order-management-frontend
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Logs de Error
-Los logs se guardan en el directorio `logs/` y contienen información detallada de errores.
+### Error Logs
+Logs are saved in the `logs/` directory and contain detailed error information.
 
-### Verificación de Estado
+### Status Verification
 ```bash
-# Verificación rápida de todos los servicios
-bash check-local.sh --quick
+# Quick verification of all services
+bash scripts/local/check-local.sh --quick
 
-# Verificación completa con tests de API
-bash check-local.sh
+# Complete verification with API tests
+bash scripts/local/check-local.sh
 ```
 
-## 🔄 Workflow de Desarrollo
+## 🔄 Development Workflow
 
-1. **Iniciar infraestructura**: SQL Server y RabbitMQ
-2. **Ejecutar**: `bash start-local.sh`
-3. **Desarrollar**: Hacer cambios en el código
-4. **Probar**: Usar `bash check-local.sh` para verificar
-5. **Detener**: `bash stop-local.sh` cuando termines
+1. **Start infrastructure**: SQL Server and RabbitMQ  
+2. **Execute**: `bash scripts/local/start-local.sh`  
+3. **Develop**: Make code changes  
+4. **Test**: Use `bash scripts/local/check-local.sh` to verify  
+5. **Stop**: `bash scripts/local/stop-local.sh` when finished  
 
 ## 📦 Docker vs Local
 
-| Aspecto | Docker | Local |
-|---------|---------|--------|
-| **Comando** | `bash start-oms.sh` | `bash start-local.sh` |
-| **Velocidad** | Más lento para iniciar | Más rápido |
-| **Debugging** | Limitado | Completo |
+| Aspect | Docker | Local |
+|--------|--------|-------|
+| **Command** | `bash scripts/docker/start-oms.sh` | `bash scripts/local/start-local.sh` |
+| **Speed** | Slower to start | Faster |
+| **Debugging** | Limited | Complete |
 | **Hot Reload** | Frontend only | Frontend only |
-| **Aislamiento** | Completo | Parcial |
-| **Recursos** | Más memoria/CPU | Menos recursos |
+| **Isolation** | Complete | Partial |
+| **Resources** | More memory/CPU | Fewer resources |
 
-## 🚀 Próximos Pasos
+## 🔧 Environment Configuration
 
-- Configura tu IDE preferido (VS Code, Visual Studio)
-- Explora las APIs usando Swagger
-- Revisa los tests existentes
-- ¡Empieza a desarrollar!
+### Backend Environment Variables
+```env
+# Database
+ConnectionStrings__DefaultConnection=Server=localhost;Database=OrderManagement_{Service};Trusted_Connection=true;
+
+# RabbitMQ
+RabbitMQ__HostName=localhost
+RabbitMQ__UserName=guest
+RabbitMQ__Password=guest
+
+# JWT
+Jwt__Key=your-secret-key
+Jwt__Issuer=OrderManagementSystem
+Jwt__Audience=OrderManagementSystem
+```
+
+### Frontend Environment Variables (.env.local)
+```env
+# API URLs
+VITE_ORDER_SERVICE_URL=http://localhost:5001
+VITE_PRODUCT_SERVICE_URL=http://localhost:5002
+VITE_CUSTOMER_SERVICE_URL=http://localhost:5003
+VITE_LOGGING_SERVICE_URL=http://localhost:5004
+
+# Development mode
+VITE_DOCKER_MODE=false
+```
+
+## 🧪 Testing and Quality Assurance
+
+### Running Tests
+```bash
+# Frontend tests
+cd order-management-frontend
+npm test                    # Unit tests
+npm run test:e2e           # End-to-end tests
+npm run test:coverage      # Coverage report
+
+# Backend tests
+cd order-management-backend
+dotnet test                # All service tests
+dotnet test --logger:trx   # Generate test reports
+dotnet test --collect:"XPlat Code Coverage"  # Coverage
+```
+
+### Code Quality
+```bash
+# Frontend linting and formatting
+cd order-management-frontend
+npm run lint               # ESLint
+npm run format             # Prettier
+
+# Backend code analysis
+cd order-management-backend
+dotnet build --configuration Release  # Build check
+```
+
+## 🚀 IDE Setup
+
+### Visual Studio Code
+```json
+// .vscode/settings.json
+{
+  "dotnet.defaultSolution": "order-management-backend/OrderManagement.sln",
+  "typescript.preferences.quoteStyle": "single",
+  "editor.formatOnSave": true
+}
+```
+
+### Recommended Extensions
+- **C# Dev Kit** - .NET development
+- **ES7+ React/Redux/React-Native snippets** - React development
+- **REST Client** - API testing
+- **GitLens** - Git integration
+
+## 📊 Performance Monitoring
+
+### Local Monitoring
+```bash
+# Monitor service performance
+dotnet-counters monitor --process-id <service-pid>
+
+# Monitor frontend build
+npm run build:analyze
+
+# Database performance
+sqlcmd -S localhost -Q "SELECT * FROM sys.dm_exec_requests"
+```
+
+## 🚀 Next Steps
+
+- Configure your preferred IDE (VS Code, Visual Studio)  
+- Explore the APIs using Swagger  
+- Review existing tests  
+- Start developing!  
+
+## 🔄 Transitioning Between Modes
+
+### From Local to Docker
+```bash
+# Stop local services
+bash scripts/local/stop-local.sh
+
+# Start Docker environment
+bash scripts/docker/start-oms.sh
+```
+
+### From Docker to Local
+```bash
+# Stop Docker services
+docker-compose down
+
+# Start local environment
+bash scripts/local/start-local.sh
+```
+
+## 📞 Support
+
+**Issues?** Run `bash scripts/local/check-local.sh` for complete system diagnosis.
 
 ---
 
-**¿Problemas?** Ejecuta `bash check-local.sh` para diagnóstico completo.
+**🎉 Happy local development with your Order Management System!**

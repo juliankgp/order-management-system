@@ -1,31 +1,27 @@
 # Order Management System 🚀
 
-Un sistema completo de gestión de pedidos dockerizado, construido con .NET 8 y React + TypeScript.
+A complete dockerized order management system built with .NET 8 and React + TypeScript.
 
-# Order Management System 🚀
+## ⚡ Quick Start
 
-Un sistema completo de gestión de pedidos dockerizado, construido con .NET 8 y React + TypeScript.
-
-## ⚡ Inicio Rápido
-
-### 🐳 Con Docker (Recomendado para Demo)
-**¡Ejecuta todo el sistema con un solo comando!**
+### 🐳 Docker (Recommended for Demo)
+**Run the entire system with a single command!**
 
 ```bash
-bash start-oms.sh
+bash scripts/docker/start-oms.sh
 ```
 
-### 🏠 Desarrollo Local (Recomendado para Desarrollo)
-**¡Desarrollo rápido con hot reload!**
+### 🏠 Local Development (Recommended for Development)
+**Fast development with hot reload!**
 
 ```bash
-bash start-local.sh
+bash scripts/local/start-local.sh
 ```
 
-### 🔗 URLs del Sistema
+### 🔗 System URLs
 
-| Servicio | Docker | Local | Swagger |
-|----------|--------|-------|---------|
+| Service | Docker | Local | Swagger |
+|---------|--------|-------|---------|
 | **Frontend** | http://localhost:3000 | http://localhost:3000 | - |
 | **Order Service** | http://localhost:5001 | http://localhost:5001 | /swagger |
 | **Product Service** | http://localhost:5002 | http://localhost:5002 | /swagger |
@@ -33,17 +29,17 @@ bash start-local.sh
 | **Logging Service** | http://localhost:5004 | http://localhost:5004 | /swagger |
 | **RabbitMQ Management** | http://localhost:15672 | http://localhost:15672 | guest/guest |
 
-## 🏗️ Arquitectura de Microservicios
+## 🏗️ Microservices Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      CLIENTE/APLICACIÓN                         │
+│                    CLIENT/APPLICATION                           │
 │                    (HTTP/HTTPS + JWT)                          │
 └─────────────────┬───────────────────────────────────────────────┘
                   │ HTTP + JWT
                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    API GATEWAY (Opcional)                      │
+│                   API GATEWAY (Optional)                       │
 └─────────────────┬───────────────────────────────────────────────┘
                   │
     ┌─────────────┼─────────────┬─────────────┬─────────────┐
@@ -72,168 +68,177 @@ bash start-local.sh
               └─────────────────────┘
 ```
 
-## � Guías de Inicio
+## 📋 Getting Started Guides
 
 ### 🐳 [Docker Deployment](DOCKER_DEPLOYMENT.md)
-**Para demos, testing y producción**
-- Un solo comando para iniciar todo
-- Aislamiento completo de dependencias
-- Configuración de producción lista
+**For demos, testing, and production**
+- Single command to start everything
+- Complete dependency isolation
+- Production-ready configuration
 
 ### 🏠 [Local Development](LOCAL_DEVELOPMENT.md)  
-**Para desarrollo activo y debugging**
-- Hot reload para desarrollo rápido
-- Debugging completo de .NET y React
-- Menor uso de recursos del sistema
+**For active development and debugging**
+- Hot reload for rapid development
+- Full .NET and React debugging
+- Lower system resource usage
 
-### ⚡ Comandos Rápidos
+### ⚡ Quick Commands
 
 ```bash
-# 🐳 Docker: Todo el stack completo
-bash start-oms.sh                 # Iniciar con Docker
-bash test-integration.sh          # Probar el sistema
+# 🐳 Docker: Complete stack
+bash scripts/docker/start-oms.sh         # Start with Docker
+bash scripts/docker/test-integration.sh  # Test the system
 
-# 🏠 Local: Desarrollo rápido  
-bash start-local.sh               # Iniciar localmente
-bash check-local.sh               # Verificar servicios
-bash stop-local.sh                # Detener servicios
+# 🏠 Local: Rapid development  
+bash scripts/local/start-local.sh        # Start locally
+bash scripts/local/check-local.sh        # Check services
+bash scripts/local/stop-local.sh         # Stop services
 
-# 📊 Verificación de estado
-bash check-local.sh --quick       # Verificación rápida
-docker ps                         # Ver contenedores Docker
+# 📊 Status verification
+bash scripts/local/check-local.sh --quick  # Quick check
+docker ps                                 # View Docker containers
 ```
 
-## �📋 Características del Sistema
+## 📋 System Features
 
-### 🔧 Backend (Microservicios .NET 8)
-- **OrderService**: Gestión de órdenes y transacciones
-- **ProductService**: Catálogo de productos e inventario
-- **CustomerService**: Gestión de clientes y autenticación
-- **LoggingService**: Centralización de logs y auditoría
+### 🔧 Backend (Microservices .NET 8)
+- **OrderService**: Order and transaction management
+- **ProductService**: Product catalog and inventory
+- **CustomerService**: Customer management and authentication
+- **LoggingService**: Centralized logging and auditing
 
-### 🛠️ Tecnologías Principales
+### 🛠️ Core Technologies
 
 #### Backend
-- **.NET 8** - Framework principal
+- **.NET 8** - Main framework
 - **Entity Framework Core** - ORM
-- **SQL Server** - Base de datos
+- **SQL Server** - Database
 - **RabbitMQ** - Message broker
-- **Serilog** - Logging estructurado
-- **xUnit** - Testing unitario
-- **Docker** - Containerización
-- Docker Desktop (opcional)
+- **Serilog** - Structured logging
+- **xUnit** - Unit testing
+- **Docker** - Containerization
 
-### Opción 1: Configuración Manual
+#### Frontend
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Material-UI** - Component library
+- **React Query** - Data fetching
+- **React Router** - Navigation
 
-#### 1. Configurar Backend
+## 🚀 Setup Options
+
+### Option 1: Manual Configuration
+
+#### 1. Backend Setup
 ```bash
-# Clonar repositorio
+# Clone repository
 git clone <repository-url>
 cd order-management-system/order-management-backend
 
-# Configurar bases de datos
+# Setup databases
 ./infra/scripts/setup-databases.ps1
 
-# Restaurar dependencias
+# Restore dependencies
 dotnet restore
 
-# Ejecutar migraciones (por cada servicio)
+# Run migrations (for each service)
 dotnet ef database update --project services/OrderService/src/Infrastructure
 
-# Ejecutar servicios
+# Run services
 dotnet run --project services/OrderService/src/Web --urls="https://localhost:5001"
 dotnet run --project services/ProductService/src/Web --urls="https://localhost:5002"
 dotnet run --project services/CustomerService/src/Web --urls="https://localhost:5003"
 dotnet run --project services/LoggingService/src/Web --urls="https://localhost:5004"
 ```
 
-### Opción 2: Docker Compose (TODO EL SISTEMA - UN SOLO COMANDO) 🚀
+### Option 2: Docker Compose (COMPLETE SYSTEM - SINGLE COMMAND) 🚀
 
 ```bash
-# NUEVO: Dockerización completa - Backend + Frontend + Infraestructura
-# Un solo comando para levantar todo el sistema
+# NEW: Complete dockerization - Backend + Frontend + Infrastructure
+# Single command to start the entire system
 
-# Windows (PowerShell) - RECOMENDADO
+# Windows (PowerShell) - RECOMMENDED
 .\start-system.ps1
 
 # Linux/Mac/WSL (Bash)
 ./start-system.sh
 
-# O directamente con Docker Compose
+# Or directly with Docker Compose
 docker-compose up -d
 
-# Ver todo funcionando:
+# View everything running:
 # Frontend: http://localhost:3000
 # APIs: http://localhost:500X/swagger
 # RabbitMQ: http://localhost:15672
 ```
 
-**🎉 NUEVO: Sistema Completamente Dockerizado**
-- ✅ Backend (4 microservicios)
-- ✅ Frontend React
+**🎉 NEW: Fully Dockerized System**
+- ✅ Backend (4 microservices)
+- ✅ React Frontend
 - ✅ SQL Server + RabbitMQ
-- ✅ Un solo comando para todo
-- ✅ Health checks automáticos
-- ✅ Hot reload en desarrollo
+- ✅ Single command for everything
+- ✅ Automatic health checks
+- ✅ Development hot reload
 
-Ver documentación completa: [DOCKER_README.md](DOCKER_README.md)
+See complete documentation: [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)
 
-### Opción 3: Docker Compose Backend (Original)
+### Option 3: Docker Compose Backend (Original)
 
 ```bash
-# Solo backend (método original)
+# Backend only (original method)
 cd order-management-backend
 
-# Ejecutar toda la infraestructura backend
+# Run entire backend infrastructure
 docker-compose -f infra/docker/docker-compose.yml up -d
 
-# Ver logs
+# View logs
 docker-compose -f infra/docker/docker-compose.yml logs -f
 ```
 
-## 📚 Documentación por Servicio
+## 📚 Service Documentation
 
-### 🔵 OrderService (Puerto 5001)
+### 🔵 OrderService (Port 5001)
 ```
-GET    /api/orders              # Listar órdenes
-GET    /api/orders/{id}         # Obtener orden
-POST   /api/orders              # Crear orden
-PUT    /api/orders/{id}         # Actualizar orden
-DELETE /api/orders/{id}         # Eliminar orden
-GET    /api/orders/customer/{customerId} # Órdenes por cliente
-```
-
-### 🟢 ProductService (Puerto 5002)
-```
-GET    /api/products            # Listar productos
-GET    /api/products/{id}       # Obtener producto
-POST   /api/products            # Crear producto
-PUT    /api/products/{id}       # Actualizar producto
-PUT    /api/products/{id}/stock # Actualizar stock
+GET    /api/orders              # List orders
+GET    /api/orders/{id}         # Get order
+POST   /api/orders              # Create order
+PUT    /api/orders/{id}         # Update order
+DELETE /api/orders/{id}         # Delete order
+GET    /api/orders/customer/{customerId} # Orders by customer
 ```
 
-### 🟡 CustomerService (Puerto 5003)
+### 🟢 ProductService (Port 5002)
 ```
-GET    /api/customers           # Listar clientes
-GET    /api/customers/{id}      # Obtener cliente
-POST   /api/customers           # Crear cliente
-POST   /api/auth/login          # Autenticación
-POST   /api/auth/register       # Registro
-```
-
-### 🟣 LoggingService (Puerto 5004)
-```
-GET    /api/logs                # Consultar logs
-GET    /api/logs/search         # Búsqueda avanzada
-POST   /api/logs                # Crear log
+GET    /api/products            # List products
+GET    /api/products/{id}       # Get product
+POST   /api/products            # Create product
+PUT    /api/products/{id}       # Update product
+PUT    /api/products/{id}/stock # Update stock
 ```
 
-## 🔄 Flujo de Comunicación
+### 🟡 CustomerService (Port 5003)
+```
+GET    /api/customers           # List customers
+GET    /api/customers/{id}      # Get customer
+POST   /api/customers           # Create customer
+POST   /api/auth/login          # Authentication
+POST   /api/auth/register       # Registration
+```
 
-### Flujo de Creación de Orden
+### 🟣 LoggingService (Port 5004)
+```
+GET    /api/logs                # Query logs
+GET    /api/logs/search         # Advanced search
+POST   /api/logs                # Create log
+```
+
+## 🔄 Communication Flow
+
+### Order Creation Flow
 ```mermaid
 sequenceDiagram
-    participant C as Cliente
+    participant C as Client
     participant OS as OrderService
     participant PS as ProductService
     participant CS as CustomerService
@@ -241,60 +246,74 @@ sequenceDiagram
     participant LS as LoggingService
 
     C->>OS: POST /api/orders
-    OS->>PS: Validar productos y stock
-    PS-->>OS: Información de productos
-    OS->>CS: Validar cliente
-    CS-->>OS: Información de cliente
-    OS->>OS: Crear orden
-    OS->>MQ: Publicar OrderCreated
-    MQ->>PS: Procesar OrderCreated
-    PS->>PS: Actualizar stock
-    PS->>MQ: Publicar StockUpdated
-    MQ->>LS: Registrar eventos
-    OS-->>C: Orden creada exitosamente
+    OS->>PS: Validate products and stock
+    PS-->>OS: Product information
+    OS->>CS: Validate customer
+    CS-->>OS: Customer information
+    OS->>OS: Create order
+    OS->>MQ: Publish OrderCreated
+    MQ->>PS: Process OrderCreated
+    PS->>PS: Update stock
+    PS->>MQ: Publish StockUpdated
+    MQ->>LS: Log events
+    OS-->>C: Order created successfully
 ```
 
 ## 🧪 Testing
 
 ### Backend
 ```bash
-# Tests unitarios por servicio
+# Unit tests per service
 dotnet test services/OrderService/tests/
 dotnet test services/ProductService/tests/
 dotnet test services/CustomerService/tests/
 dotnet test services/LoggingService/tests/
 
-# Tests de integración
+# Integration tests
 dotnet test tests/Integration.Tests/
 
 # Coverage report
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-## 📊 Monitoreo y Observabilidad
+### Frontend
+```bash
+cd order-management-frontend
 
-### Logs Centralizados
-- **Serilog** en todos los servicios
-- **Structured logging** con correlationId
-- **LoggingService** para consultas centralizadas
+# Unit tests
+npm test
 
-### Métricas
-- Health checks en `/health`
-- Swagger UI en cada servicio
-- RabbitMQ Management en `http://localhost:15672`
+# E2E tests
+npm run test:e2e
 
-### URLs de Desarrollo
+# Coverage
+npm run test:coverage
+```
+
+## 📊 Monitoring and Observability
+
+### Centralized Logging
+- **Serilog** in all services
+- **Structured logging** with correlationId
+- **LoggingService** for centralized queries
+
+### Metrics
+- Health checks at `/health`
+- Swagger UI in each service
+- RabbitMQ Management at `http://localhost:15672`
+
+### Development URLs
 - **OrderService**: https://localhost:5001/swagger
 - **ProductService**: https://localhost:5002/swagger
 - **CustomerService**: https://localhost:5003/swagger
 - **LoggingService**: https://localhost:5004/swagger
 - **RabbitMQ Management**: http://localhost:15672
 
-## 🔧 Configuración
+## 🔧 Configuration
 
-### Variables de Entorno Backend
+### Backend Environment Variables
 ```env
-# Base de datos
+# Database
 ConnectionStrings__DefaultConnection=Server=localhost;Database=OrderManagement_{Service};Trusted_Connection=true;
 
 # RabbitMQ
@@ -308,64 +327,116 @@ Jwt__Issuer=OrderManagementSystem
 Jwt__Audience=OrderManagementSystem
 ```
 
-## 🏗️ Patrones de Diseño Implementados
+### Frontend Environment Variables
+```env
+# API URLs
+VITE_ORDER_SERVICE_URL=http://localhost:5001
+VITE_PRODUCT_SERVICE_URL=http://localhost:5002
+VITE_CUSTOMER_SERVICE_URL=http://localhost:5003
+VITE_LOGGING_SERVICE_URL=http://localhost:5004
+
+# Docker mode
+VITE_DOCKER_MODE=false
+```
+
+## 🏗️ Design Patterns Implemented
 
 ### Backend
-- **Repository Pattern**: Abstracción de acceso a datos
-- **Unit of Work**: Gestión de transacciones
-- **CQRS**: Separación de comandos y consultas
-- **Domain Events**: Comunicación entre contextos
-- **Dependency Injection**: Inversión de control
-- **Mediator Pattern**: Desacoplamiento de handlers
-- **CQRS**: Separación de comandos y consultas
-- **Dependency Injection**: Inversión de control
-- **Event-Driven Architecture**: Comunicación asíncrona
+- **Repository Pattern**: Data access abstraction
+- **Unit of Work**: Transaction management
+- **CQRS**: Command and query separation
+- **Domain Events**: Inter-context communication
+- **Dependency Injection**: Inversion of control
+- **Mediator Pattern**: Handler decoupling
+- **Event-Driven Architecture**: Asynchronous communication
 
-## 📝 Convenciones de Código
+### Frontend
+- **Component Composition**: Reusable UI components
+- **Context API**: State management
+- **Custom Hooks**: Logic reuse
+- **Error Boundaries**: Error handling
+- **Lazy Loading**: Performance optimization
+
+## 📝 Code Conventions
 
 ### Backend (.NET)
-- **PascalCase**: Clases, métodos, propiedades
-- **camelCase**: Variables locales, parámetros
-- **Interfaces**: Prefijo `I`
-- **Servicios**: Sufijo `Service`
-- **Repositorios**: Sufijo `Repository`
+- **PascalCase**: Classes, methods, properties
+- **camelCase**: Local variables, parameters
+- **Interfaces**: Prefix `I`
+- **Services**: Suffix `Service`
+- **Repositories**: Suffix `Repository`
+
+### Frontend (React/TypeScript)
+- **PascalCase**: Components, interfaces
+- **camelCase**: Functions, variables
+- **kebab-case**: File names
+- **UPPER_CASE**: Constants
 
 ## 🚀 Deployment
 
-### Desarrollo Local
+### Local Development
 ```bash
 # Backend
 dotnet run --project services/{ServiceName}/src/Web
+
+# Frontend
+cd order-management-frontend
+npm run dev
 ```
 
-### Producción con Docker
+### Production with Docker
 ```bash
-# Build y deploy completo
+# Build and deploy complete system
 docker-compose -f infra/docker/docker-compose.yml up -d --build
 ```
 
-### Azure Deployment
+### Cloud Deployment
 ```bash
-# Backend con Azure Container Apps
+# Azure Container Apps
 az containerapp up --name order-management --resource-group myRG
+
+# AWS ECS
+# See deployment/aws-ecs folder
+
+# Kubernetes
+kubectl apply -f deployment/k8s/
 ```
 
-## 🤝 Contribución
+## 🤝 Contributing
 
-1. Fork el proyecto
-2. Crear feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la branch (`git push origin feature/AmazingFeature`)
-5. Abrir Pull Request
+1. Fork the project
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-## 📄 Licencia
+### Development Workflow
+1. Start local development: `bash scripts/local/start-local.sh`
+2. Make changes and test
+3. Run tests: `dotnet test` and `npm test`
+4. Commit with conventional commits
+5. Create PR with detailed description
+
+## 📄 License
 
 [MIT License](LICENSE)
 
-## 👥 Equipo
+## 👥 Team & Architecture
 
-- **Arquitectura**: Microservicios + Event-Driven
+- **Architecture**: Microservices + Event-Driven
 - **Backend**: .NET 8 + Entity Framework + RabbitMQ
-- **Persistencia**: SQL Server por microservicio
-- **Comunicación**: HTTP + Events asíncronos
-- **Seguridad**: JWT + HTTPS + CORS
+- **Frontend**: React + TypeScript + Vite
+- **Persistence**: SQL Server per microservice
+- **Communication**: HTTP + Asynchronous events
+- **Security**: JWT + HTTPS + CORS
+
+## 📞 Support & Documentation
+
+- **Getting Started**: See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) or [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)
+- **API Documentation**: Visit `/swagger` endpoint on each service
+- **Troubleshooting**: Common issues and solutions in documentation
+- **Issues**: Report bugs and request features via GitHub Issues
+
+---
+
+**🎉 Ready to run your complete Order Management System!**
