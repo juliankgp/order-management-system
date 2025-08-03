@@ -37,16 +37,33 @@ public class RabbitMQEventBusService : BackgroundService
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        try
+        int maxRetries = 5;
+        int retryDelay = 2000; // 2 segundos
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            InitRabbitMQ();
-            await base.StartAsync(cancellationToken);
-            _logger.LogInformation("RabbitMQ Event Bus Service started successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to start RabbitMQ Event Bus Service");
-            throw;
+            try
+            {
+                _logger.LogInformation("Attempting to connect to RabbitMQ (attempt {Attempt}/{MaxRetries})", attempt, maxRetries);
+                InitRabbitMQ();
+                await base.StartAsync(cancellationToken);
+                _logger.LogInformation("RabbitMQ Event Bus Service started successfully");
+                return; // Éxito, salir del bucle
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to start RabbitMQ Event Bus Service (attempt {Attempt}/{MaxRetries})", attempt, maxRetries);
+                
+                if (attempt == maxRetries)
+                {
+                    _logger.LogError(ex, "Failed to start RabbitMQ Event Bus Service after {MaxRetries} attempts. Service will continue without RabbitMQ.", maxRetries);
+                    // No lanzar excepción para permitir que el servicio inicie sin RabbitMQ
+                    await base.StartAsync(cancellationToken);
+                    return;
+                }
+                
+                await Task.Delay(retryDelay * attempt, cancellationToken); // Backoff exponencial
+            }
         }
     }
 
@@ -76,11 +93,21 @@ public class RabbitMQEventBusService : BackgroundService
     {
         try
         {
+            var hostName = _configuration["RabbitMQ:HostName"] ?? "localhost";
+            var userName = _configuration["RabbitMQ:UserName"] ?? "guest";
+            var password = _configuration["RabbitMQ:Password"] ?? "guest";
+            
+            _logger.LogInformation("Connecting to RabbitMQ at {HostName} with user {UserName}", hostName, userName);
+
             var factory = new ConnectionFactory
             {
-                HostName = _configuration["RabbitMQ:HostName"] ?? "localhost",
-                UserName = _configuration["RabbitMQ:UserName"] ?? "guest",
-                Password = _configuration["RabbitMQ:Password"] ?? "guest"
+                HostName = hostName,
+                UserName = userName,
+                Password = password,
+                RequestedConnectionTimeout = TimeSpan.FromSeconds(30),
+                RequestedHeartbeat = TimeSpan.FromSeconds(60),
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
             };
 
             _connection = factory.CreateConnection();

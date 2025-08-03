@@ -67,8 +67,29 @@ check_dependencies() {
     if curl -s http://localhost:15672 &> /dev/null; then
         echo -e "${GREEN}✅ RabbitMQ está disponible${NC}"
     else
-        echo -e "${YELLOW}⚠️  RabbitMQ no responde. Asegúrate de que esté corriendo${NC}"
-        echo -e "${YELLOW}   Puedes usar: 'docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management'${NC}"
+        echo -e "${YELLOW}⚠️  RabbitMQ no responde. Iniciando RabbitMQ automáticamente...${NC}"
+        
+        # Detener contenedor existente si existe
+        docker stop rabbitmq-local 2>/dev/null || true
+        docker rm rabbitmq-local 2>/dev/null || true
+        
+        # Iniciar RabbitMQ con configuración correcta
+        docker run -d --name rabbitmq-local \
+            -p 5672:5672 \
+            -p 15672:15672 \
+            -e RABBITMQ_DEFAULT_USER=guest \
+            -e RABBITMQ_DEFAULT_PASS=guest \
+            rabbitmq:3-management
+        
+        echo -e "${BLUE}⏳ Esperando que RabbitMQ se inicie completamente...${NC}"
+        sleep 20
+        
+        # Verificar que esté funcionando
+        if curl -s http://localhost:15672 &> /dev/null; then
+            echo -e "${GREEN}✅ RabbitMQ iniciado exitosamente${NC}"
+        else
+            echo -e "${YELLOW}⚠️  RabbitMQ tardó más de lo esperado. Continúa de todas formas...${NC}"
+        fi
     fi
 }
 

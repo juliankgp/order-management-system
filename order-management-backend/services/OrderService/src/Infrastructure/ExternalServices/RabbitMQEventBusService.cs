@@ -62,6 +62,13 @@ public class RabbitMQEventBusService : OrderService.Application.Interfaces.IEven
     {
         try
         {
+            // Verificar conexión antes de intentar publicar
+            if (_channel == null || _channel.IsClosed)
+            {
+                _logger.LogWarning("Cannot publish event - RabbitMQ connection not available");
+                return;
+            }
+
             var eventType = @event.GetType().Name;
             _logger.LogInformation("Publishing event {EventType} with routing key {RoutingKey}", eventType, routingKey);
 

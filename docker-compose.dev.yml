@@ -1,0 +1,133 @@
+# ===== DOCKER COMPOSE SIMPLIFICADO PARA DESARROLLO =====
+# Versión ligera sin todas las configuraciones de producción
+
+version: '3.8'
+
+services:
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=OrderManagement2024!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=OrderManagement2024!
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Customer Service
+  customer-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/CustomerService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Customers;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+    ports:
+      - "5003:5003"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  # Product Service
+  product-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/ProductService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Products;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+    ports:
+      - "5002:5002"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  # Order Service
+  order-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/OrderService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Orders;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - ExternalServices__ProductService__BaseUrl=http://product-service:5002
+      - ExternalServices__CustomerService__BaseUrl=http://customer-service:5003
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+    ports:
+      - "5001:5001"
+    depends_on:
+      - customer-service
+      - product-service
+
+  # Logging Service
+  logging-service:
+    build:
+      context: ./order-management-backend
+      dockerfile: services/LoggingService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderManagement_Logs;User Id=sa;Password=OrderManagement2024!;TrustServerCertificate=true;
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=OrderManagement2024!
+      - Jwt__Key=OrderManagement-JWT-Secret-Key-2025-Super-Secure-At-Least-256-Bits-Long-Docker
+      - Jwt__Issuer=OrderManagementSystem
+      - Jwt__Audience=OrderManagementSystem
+    ports:
+      - "5004:5004"
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  # Frontend
+  frontend:
+    build:
+      context: ./order-management-frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - VITE_ORDER_SERVICE_EXTERNAL_URL=http://localhost:5001
+      - VITE_PRODUCT_SERVICE_EXTERNAL_URL=http://localhost:5002
+      - VITE_CUSTOMER_SERVICE_EXTERNAL_URL=http://localhost:5003
+      - VITE_LOGGING_SERVICE_EXTERNAL_URL=http://localhost:5004
+    ports:
+      - "3000:5173"
+    depends_on:
+      - order-service
+      - product-service
+      - customer-service
+      - logging-service
+
+volumes:
+  sqlserver_data:
+  rabbitmq_data:
