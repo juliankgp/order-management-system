@@ -3,13 +3,16 @@ import { type RouteConfig } from '../types';
 // Layout components
 import MainLayout from '../components/layout/MainLayout';
 
-// Page components
-import HomePage from '../pages/HomePage';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import ProductsPage from '../pages/ProductsPage';
-import OrdersPage from '../pages/OrdersPage';
-import CheckoutPage from '../pages/CheckoutPage';
+import { lazy } from 'react';
+
+// Page components with code splitting
+const HomePage = lazy(() => import('../pages/HomePage'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
+const ProductsPage = lazy(() => import('../pages/ProductsPage'));
+const OrdersPage = lazy(() => import('../pages/OrdersPage'));
+const CheckoutPage = lazy(() => import('../pages/CheckoutPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 
 // Configuración de rutas de la aplicación
 export const routes: RouteConfig[] = [
@@ -55,6 +58,13 @@ export const routes: RouteConfig[] = [
     requiresAuth: true,
     title: 'Checkout',
     description: 'Complete your order'
+  },
+  {
+    path: '/profile',
+    component: ProfilePage,
+    requiresAuth: true,
+    title: 'Profile',
+    description: 'Manage your profile settings'
   }
 ];
 

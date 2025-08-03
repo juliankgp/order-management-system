@@ -6,7 +6,6 @@ import {
   Button, 
   Box, 
   IconButton,
-  Chip,
   CircularProgress
 } from '@mui/material';
 import { 
@@ -81,17 +80,15 @@ const Header: React.FC = () => {
               {/* Usuario info */}
               {user && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AccountCircleIcon />
-                  <Chip
-                    label={user.fullName}
-                    variant="outlined"
-                    size="small"
-                    sx={{ 
-                      color: 'white', 
-                      borderColor: 'white',
-                      '& .MuiChip-label': { color: 'white' }
-                    }}
-                  />
+                  <Button
+                    color="inherit"
+                    startIcon={<AccountCircleIcon />}
+                    onClick={() => handleNavigation('/profile')}
+                    variant={location.pathname === '/profile' ? 'outlined' : 'text'}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {user.fullName}
+                  </Button>
                 </Box>
               )}
               
